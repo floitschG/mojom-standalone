@@ -1,21 +1,5 @@
-// Copyright 2013 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-define("{{module.path}}", [
-    "mojo/public/js/bindings/codec",
-    "mojo/public/js/bindings/validator",
-{%- for import in imports %}
-    "{{import.module.path}}",
-{%- endfor %}
-  ], function(codec, validator
-{%- for import in imports -%}
-    , {{import.unique_name}}
-{%- endfor -%}
-) {
-
 {#--- Constants #}
-{%  for constant in module.constants %}
+{%-  for constant in module.constants %}
   var {{constant.name}} = {{constant.value|expression_to_text}};
 {%- endfor %}
 
@@ -50,8 +34,7 @@ define("{{module.path}}", [
 {#--- Interface Client #}
 {%-   if interface.client in interfaces|map(attribute='name') %}
   exports.{{interface.name}}.client = {{interface.client}};
+{%-   elif interface.client in imported_interfaces %}
+  exports.{{interface.name}}.client = {{imported_interfaces[interface.client]}};
 {%-   endif %}
 {%- endfor %}
-
-  return exports;
-});
