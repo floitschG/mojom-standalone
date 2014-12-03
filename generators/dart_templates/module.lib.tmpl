@@ -6,8 +6,8 @@ library {{module.name}};
 
 import 'dart:async';
 
-import 'package:mojo/public/dart/core.dart' as core;
-import 'package:mojo/public/dart/bindings.dart' as bindings;
+import 'package:mojo/public/dart/core_standalone.dart' as core;
+import 'package:mojo/public/dart/bindings_standalone.dart' as bindings;
 {%- for import in imports %}
 import 'package:{{import.module.path}}.dart' as {{import.unique_name}};
 {%- endfor %}
