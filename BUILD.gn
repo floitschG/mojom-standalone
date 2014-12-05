@@ -21,13 +21,13 @@ python_binary_module("system") {
     "mojo/system.pyx",
   ]
   deps = [
-    "//mojo/public/c/environment",
-    "//mojo/public/c/system:for_shared_library",
-    "//mojo/public/cpp/environment:standalone",
-    "//mojo/public/cpp/system",
-    "//mojo/public/cpp/utility",
-    "//mojo/public/cpp/bindings:callback",
     ":base",
+    "../c/environment",
+    "../c/system:for_shared_library",
+    "../cpp/environment:standalone",
+    "../cpp/system",
+    "../cpp/utility",
+    "../cpp/bindings:callback",
   ]
 }
 
@@ -43,13 +43,13 @@ python_binary_module("system_impl") {
     "src/python_system_helper.h",
   ]
   deps = [
-    "//mojo/public/c/environment",
-    "//mojo/public/c/system:for_shared_library",
-    "//mojo/public/cpp/environment:standalone",
-    "//mojo/public/cpp/system",
-    "//mojo/public/cpp/utility",
-    "//mojo/public/cpp/bindings:callback",
     ":base",
+    "../c/environment",
+    "../c/system:for_shared_library",
+    "../cpp/environment:standalone",
+    "../cpp/system",
+    "../cpp/utility",
+    "../cpp/bindings:callback",
   ]
 }
 
