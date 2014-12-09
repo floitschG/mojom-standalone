@@ -20,6 +20,7 @@ python_binary_module("system") {
     "mojo/c_core.pxd",
     "mojo/system.pyx",
   ]
+  configs = [ "../build/config:mojo_sdk" ]
   deps = [
     ":base",
     "../c/environment",
@@ -42,6 +43,7 @@ python_binary_module("system_impl") {
     "src/python_system_helper.cc",
     "src/python_system_helper.h",
   ]
+  configs = [ "../build/config:mojo_sdk" ]
   deps = [
     ":base",
     "../c/environment",
