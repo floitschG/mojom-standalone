@@ -70,6 +70,8 @@ class LexerTest(unittest.TestCase):
                       _MakeLexTokenForKeyword("module"))
     self.assertEquals(self._SingleTokenForInput("struct"),
                       _MakeLexTokenForKeyword("struct"))
+    self.assertEquals(self._SingleTokenForInput("union"),
+                      _MakeLexTokenForKeyword("union"))
     self.assertEquals(self._SingleTokenForInput("interface"),
                       _MakeLexTokenForKeyword("interface"))
     self.assertEquals(self._SingleTokenForInput("enum"),

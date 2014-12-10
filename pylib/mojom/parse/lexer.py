@@ -56,6 +56,7 @@ class Lexer(object):
     'IMPORT',
     'MODULE',
     'STRUCT',
+    'UNION',
     'INTERFACE',
     'ENUM',
     'CONST',
