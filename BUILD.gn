@@ -24,11 +24,12 @@ python_binary_module("system") {
   deps = [
     ":base",
     "../c/environment",
-    "../c/system:for_shared_library",
+    "../c/system",
     "../cpp/environment:standalone",
     "../cpp/system",
     "../cpp/utility",
     "../cpp/bindings:callback",
+    "../platform/native:system",
   ]
 }
 
@@ -47,11 +48,12 @@ python_binary_module("system_impl") {
   deps = [
     ":base",
     "../c/environment",
-    "../c/system:for_shared_library",
+    "../c/system",
     "../cpp/environment:standalone",
     "../cpp/system",
     "../cpp/utility",
     "../cpp/bindings:callback",
+    "../platform/native:system",
   ]
 }
 
