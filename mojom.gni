@@ -132,7 +132,7 @@ template("mojom") {
               generator_python_outputs
     args = [
       "{{source}}",
-      "--use_chromium_bundled_pylibs",
+      "--use_bundled_pylibs",
       "-d", rebase_path("//", root_build_dir),
       "-I", rebase_path("//", root_build_dir),
       "-I", rebase_path(mojo_root, root_build_dir),
