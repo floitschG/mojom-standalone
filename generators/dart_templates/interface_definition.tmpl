@@ -2,9 +2,10 @@
 const int k{{interface.name}}_{{method.name}}_name = {{method.ordinal}};
 {%- endfor %}
 
-
-class {{interface.name}}Client extends bindings.Client {
-  {{interface.name}}Client(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
+abstract class {{interface.name}}Calls {
+  void enqueueMessage(Type t, int name, Object msg);
+  Future enqueueMessageWithRequestID(Type t, int name, int id, Object msg);
+  bool get isOpen;
 
 {%- for method in interface.methods %}
 {%- if method.response_parameters == None %}
@@ -41,6 +42,10 @@ class {{interface.name}}Client extends bindings.Client {
   }
 {%- endif %}
 {%- endfor %}
+}
+
+class {{interface.name}}Client extends bindings.Client with {{interface.name}}Calls {
+  {{interface.name}}Client(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
   void handleResponse(bindings.MessageReader reader) {
     switch (reader.name) {
@@ -61,7 +66,10 @@ class {{interface.name}}Client extends bindings.Client {
 }
 
 
-class {{interface.name}}Interface extends bindings.Interface {
+class {{interface.name}}Interface extends bindings.Interface
+{% if interface.client != None %}
+with {{imported_from[interface.client]}}{{interface.client}}Calls
+{% endif %} {
   {{interface.name}}Interface(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
   bindings.Message handleMessage(bindings.MessageReader reader,
