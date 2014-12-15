@@ -68,6 +68,9 @@ READ_DATA_FLAG_QUERY = c_core.MOJO_READ_DATA_FLAG_QUERY
 READ_DATA_FLAG_PEEK = c_core.MOJO_READ_DATA_FLAG_PEEK
 MAP_BUFFER_FLAG_NONE = c_core.MOJO_MAP_BUFFER_FLAG_NONE
 
+_WAITMANY_NO_SIGNAL_STATE_ERRORS = [RESULT_INVALID_ARGUMENT,
+                                    RESULT_RESOURCE_EXHAUSTED]
+
 def GetTimeTicksNow():
   """Monotonically increasing tick count representing "right now."
 
@@ -202,13 +205,19 @@ def WaitMany(handles_and_signals, deadline):
   See mojo/public/c/system/functions.h
   """
   cdef uint32_t length = len(handles_and_signals)
+  cdef uint32_t result_index = <uint32_t>(-1)
+
   cdef _ScopedMemory handles_alloc = _ScopedMemory(
       sizeof(c_core.MojoHandle) * length)
   cdef _ScopedMemory signals_alloc = _ScopedMemory(
       sizeof(c_core.MojoHandleSignals) * length)
+  cdef _ScopedMemory states_alloc = _ScopedMemory(
+      sizeof(c_core.MojoHandleSignalsState) * length)
   cdef c_core.MojoHandle* handles = <c_core.MojoHandle*>handles_alloc.memory
   cdef c_core.MojoHandleSignals* signals = (
       <c_core.MojoHandleSignals*>signals_alloc.memory)
+  cdef c_core.MojoHandleSignalsState* states = (
+      <c_core.MojoHandleSignalsState*>states_alloc.memory)
   cdef int index = 0
   for (h, s) in handles_and_signals:
     handles[index] = (<Handle?>h)._mojo_handle
@@ -217,8 +226,20 @@ def WaitMany(handles_and_signals, deadline):
   cdef c_core.MojoResult result = c_core.MOJO_RESULT_OK
   cdef c_core.MojoDeadline cdeadline = deadline
   with nogil:
-    result = c_core.MojoWaitMany(handles, signals, length, cdeadline)
-  return result
+    result = c_core.MojoWaitMany(handles, signals, length, cdeadline,
+                                 &result_index, states)
+
+  returned_result_index = None
+  if result_index != <uint32_t>(-1):
+    returned_result_index = result_index
+
+  returned_states = None
+  if result not in _WAITMANY_NO_SIGNAL_STATE_ERRORS:
+    returned_states = [(states[i].satisfied_signals,
+                        states[i].satisfiable_signals) for i in xrange(length)]
+
+  return (result, returned_result_index, returned_states)
+
 
 cdef class DataPipeTwoPhaseBuffer(object):
   """Return value for two phases read and write.
@@ -340,10 +361,17 @@ cdef class Handle(object):
     cdef c_core.MojoHandle handle = self._mojo_handle
     cdef c_core.MojoHandleSignals csignals = signals
     cdef c_core.MojoDeadline cdeadline = deadline
+    cdef c_core.MojoHandleSignalsState signal_states
     cdef c_core.MojoResult result
     with nogil:
-      result = c_core.MojoWait(handle, csignals, cdeadline)
-    return result
+      result = c_core.MojoWait(handle, csignals, cdeadline, &signal_states)
+
+    returned_states = None
+    if result not in _WAITMANY_NO_SIGNAL_STATE_ERRORS:
+      returned_states = (signal_states.satisfied_signals,
+            signal_states.satisfiable_signals)
+
+    return (result, returned_states)
 
   def AsyncWait(self, signals, deadline, callback):
     cdef c_core.MojoHandle handle = self._mojo_handle
