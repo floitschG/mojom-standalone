@@ -5,6 +5,8 @@
 # distutils language = c++
 
 cimport c_core
+cimport c_export  # needed so the init function gets exported
+cimport c_thunks
 
 
 from cpython.buffer cimport PyBUF_CONTIG
@@ -27,10 +29,9 @@ def SetSystemThunks(system_thunks_as_object):
 
   This should only be used by the embedder.
   """
-  cdef const c_core.MojoSystemThunks* system_thunks = (
-      <const c_core.MojoSystemThunks*><uintptr_t>system_thunks_as_object)
-  c_core.MojoSetSystemThunks(system_thunks)
-  mojo.system_impl.SetSystemThunks(system_thunks_as_object)
+  cdef const c_thunks.MojoSystemThunks* system_thunks = (
+      <const c_thunks.MojoSystemThunks*><uintptr_t>system_thunks_as_object)
+  c_thunks.MojoSetSystemThunks(system_thunks)
 
 HANDLE_INVALID = c_core.MOJO_HANDLE_INVALID
 RESULT_OK = c_core.MOJO_RESULT_OK
@@ -800,4 +801,4 @@ class RunLoop(object):
     return None
 
 
-_ASYNC_WAITER = mojo.system_impl.ASYNC_WAITER
+_ASYNC_WAITER = mojo.system_impl.AsyncWaiter()

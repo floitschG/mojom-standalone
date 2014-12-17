@@ -13,15 +13,6 @@ from cpython.buffer cimport PyObject_GetBuffer
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc.stdint cimport int32_t, int64_t, uint32_t, uint64_t, uintptr_t
 
-cdef extern from "third_party/cython/python_export.h":
-  pass
-
-cdef extern from "mojo/public/platform/native/system_thunks.h" nogil:
-  cdef struct MojoSystemThunks:
-    pass
-
-cdef extern size_t MojoSetSystemThunks(const MojoSystemThunks* system_thunks)
-
 cdef extern from "mojo/public/c/system/core.h" nogil:
   # types.h
   ctypedef int64_t MojoTimeTicks
