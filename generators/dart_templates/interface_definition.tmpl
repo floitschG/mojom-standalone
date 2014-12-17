@@ -9,7 +9,7 @@ abstract class {{interface.name}}Calls {
 
 {%- for method in interface.methods %}
 {%- if method.response_parameters == None %}
-  void {{method.name|stylize_method}}(
+  void call{{method.name}}(
 {%- for parameter in method.parameters -%}
     {{parameter.kind|dart_decl_type}} {{parameter.name}}{% if not loop.last %}, {% endif %}
 {%- endfor -%}
@@ -24,7 +24,7 @@ abstract class {{interface.name}}Calls {
                    params);
   }
 {% else %}
-  Future<{{interface.name}}_{{method.name}}_ResponseParams> {{method.name|stylize_method}}(
+  Future<{{interface.name}}_{{method.name}}_ResponseParams> call{{method.name}}(
 {%- for parameter in method.parameters -%}
     {{parameter.kind|dart_decl_type}} {{parameter.name}}{% if not loop.last %}, {% endif %}
 {%- endfor -%}
@@ -37,6 +37,7 @@ abstract class {{interface.name}}Calls {
     return enqueueMessageWithRequestID(
         {{interface.name}}_{{method.name}}_Params,
         k{{interface.name}}_{{method.name}}_name,
+        0,
         bindings.kMessageExpectsResponse,
         params);
   }
@@ -66,25 +67,45 @@ class {{interface.name}}Client extends bindings.Client with {{interface.name}}Ca
 }
 
 
-class {{interface.name}}Interface extends bindings.Interface
-{% if interface.client != None %}
+abstract class {{interface.name}}Interface extends bindings.Interface
+{% if interface.client != None -%}
 with {{imported_from[interface.client]}}{{interface.client}}Calls
-{% endif %} {
+{% endif -%} {
   {{interface.name}}Interface(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
-  bindings.Message handleMessage(bindings.MessageReader reader,
-                                 Function messageHandler) {
+{% for method in interface.methods %}
+{%- if method.response_parameters == None %}
+  void {{method.name|stylize_method}}(
+  {%- for parameter in method.parameters -%}
+    {{parameter.kind|dart_decl_type}} {{parameter.name}}{% if not loop.last %}, {% endif %}
+  {%- endfor -%}
+  );
+{%- else %}
+  {{interface.name}}_{{method.name}}_ResponseParams {{method.name|stylize_method}}(
+  {%- for parameter in method.parameters -%}
+    {{parameter.kind|dart_decl_type}} {{parameter.name}}{% if not loop.last %}, {% endif %}
+  {%- endfor -%}
+  );
+{%- endif %}
+{%- endfor %}
+
+  bindings.Message handleMessage(bindings.MessageReader reader) {
     switch (reader.name) {
 {%- for method in interface.methods %}
       case k{{interface.name}}_{{method.name}}_name:
         var params = reader.decodeStruct({{interface.name}}_{{method.name}}_Params);
 {%- if method.response_parameters == None %}
-        messageHandler(params);
+        {{method.name|stylize_method}}(params);
 {%- else %}
-        var response = messageHandler(params);
+        var response = {{method.name|stylize_method}}(
+          {%- for parameter in method.parameters -%}
+              params.{{parameter.name}}{% if not loop.last %}, {% endif %}
+          {%- endfor -%}
+        );
         return buildResponseWithID(
             {{interface.name}}_{{method.name}}_ResponseParams,
             k{{interface.name}}_{{method.name}}_name,
+            reader.requestID,
             bindings.kMessageIsResponse,
             response);
 {%- endif %}
