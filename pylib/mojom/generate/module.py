@@ -422,6 +422,10 @@ def IsStructKind(kind):
   return isinstance(kind, Struct)
 
 
+def IsUnionKind(kind):
+  return isinstance(kind, Union)
+
+
 def IsArrayKind(kind):
   return isinstance(kind, Array)
 
@@ -452,7 +456,7 @@ def IsMapKind(kind):
 
 def IsObjectKind(kind):
   return (IsStructKind(kind) or IsArrayKind(kind) or IsStringKind(kind) or
-          IsMapKind(kind))
+          IsMapKind(kind) or IsUnionKind(kind))
 
 
 def IsNonInterfaceHandleKind(kind):
@@ -483,7 +487,7 @@ def IsCloneableKind(kind):
       return True
     if IsArrayKind(kind):
       return ContainsHandles(kind.kind, visited_kinds)
-    if IsStructKind(kind):
+    if IsStructKind(kind) or IsUnionKind(kind):
       for field in kind.fields:
         if ContainsHandles(field.kind, visited_kinds):
           return True

@@ -1,0 +1,35 @@
+{%- set class_name = union.name ~ "_Data" -%}
+{%- set enum_name = union.name ~ "_Tag" -%}
+{%- set union_name = union.name ~ "_Union" -%}
+
+class {{class_name}} {
+ public:
+  static {{class_name}}* New(mojo::internal::Buffer* buf);
+
+  static bool Validate(const void* data,
+                       mojo::internal::BoundsChecker* bounds_checker);
+
+  enum class {{enum_name}} : uint64_t {
+{%  for field in union.fields %}
+    {{field.name|upper}},
+{%- endfor %}
+  };
+
+  union MOJO_ALIGNAS(8) {{union_name}} {
+{%  for field in union.fields %}
+    {{field.kind|cpp_field_type}} {{field.name}};
+{%- endfor %}
+  };
+
+  {{enum_name}} tag;
+  {{union_name}} data;
+
+  void EncodePointersAndHandles(std::vector<mojo::Handle>* handles);
+  void DecodePointersAndHandles(std::vector<mojo::Handle>* handles);
+ 
+ private:
+  {{class_name}}();
+  ~{{class_name}}() = delete;
+};
+static_assert(sizeof({{class_name}}) == 16,
+              "Bad sizeof({{class_name}})");

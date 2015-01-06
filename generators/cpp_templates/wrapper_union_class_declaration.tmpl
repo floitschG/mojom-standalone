@@ -1,0 +1,40 @@
+class {{union.name}} {
+ public:
+  typedef internal::{{union.name}}_Data Data_;
+  typedef Data_::{{union.name}}_Union Union_;
+  typedef Data_::{{union.name}}_Tag Tag;
+
+  static {{union.name}}Ptr New();
+
+  template <typename U>
+  static {{union.name}}Ptr From(const U& u) {
+    return mojo::TypeConverter<{{union.name}}Ptr, U>::Convert(u);
+  }
+
+  template <typename U>
+  U To() const {
+    return mojo::TypeConverter<U, {{union.name}}>::Convert(*this);
+  }
+
+  {{union.name}}();
+  ~{{union.name}}();
+
+{%  if union|is_cloneable_kind %}
+  {{union.name}}Ptr Clone() const;
+{%- endif %}
+  bool Equals(const {{union.name}}& other) const;
+
+  Tag which() const {
+    return tag_;
+  }
+
+{%  for field in union.fields %}
+  bool is_{{field.name}}() const;
+  {{field.kind|cpp_pod_type}} get_{{field.name}}() const;
+  void set_{{field.name}}({{field.kind|cpp_pod_type}} {{field.name}});
+{%- endfor %}
+
+ private:
+  Tag tag_;
+  Union_ data_;
+};

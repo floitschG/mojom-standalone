@@ -1,0 +1,44 @@
+size_t GetSerializedSize_(const {{union.name}}Ptr& input) {
+  if (!input)
+    return 0;
+  size_t size = sizeof(internal::{{union.name}}_Data);
+  // TODO(azani): Worry about non-pod size.
+  return size;
+}
+
+
+void Serialize_({{union.name}}Ptr input, mojo::internal::Buffer* buf,
+                internal::{{union.name}}_Data** output) {
+  if (input) {
+    internal::{{union.name}}_Data* result =
+        internal::{{union.name}}_Data::New(buf);
+    // TODO(azani): Handle unknown and objects.
+    switch (input->which()) {
+{%  for field in union.fields %}
+      case {{union.name}}::Tag::{{field.name|upper}}:
+        result->data.{{field.name}} = input->get_{{field.name}}();
+        break;
+{%- endfor %}
+    }
+    *output = result;
+  } else {
+    *output = nullptr;
+  }
+}
+
+void Deserialize_(internal::{{union.name}}_Data* input,
+                  {{union.name}}Ptr* output) {
+  if (input) {
+    {{union.name}}Ptr result({{union.name}}::New());
+    switch (input->tag) {
+{%  for field in union.fields %}
+      case {{union.name}}::Tag::{{field.name|upper}}:
+        result->set_{{field.name}}(input->data.{{field.name}});
+        break;
+{%- endfor %}
+    }
+    *output = result.Pass();
+  } else {
+    output->reset();
+  }
+}

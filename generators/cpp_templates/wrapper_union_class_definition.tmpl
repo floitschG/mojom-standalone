@@ -1,0 +1,58 @@
+// static
+{{union.name}}Ptr {{union.name}}::New() {
+  {{union.name}}Ptr rv;
+  mojo::internal::StructHelper<{{union.name}}>::Initialize(&rv);
+  return rv.Pass();
+}
+
+{{union.name}}::{{union.name}}() {
+  // TODO(azani): Implement default values here when/if we support them.
+}
+
+{{union.name}}::~{{union.name}}() {
+}
+
+{%  if union|is_cloneable_kind %}
+{{union.name}}Ptr {{union.name}}::Clone() const {
+  {{union.name}}Ptr rv(New());
+  switch (tag_) {
+{%    for field in union.fields %}
+    case Tag::{{field.name|upper}}:
+      rv->set_{{field.name}}(data_.{{field.name}});
+      break;
+{%-   endfor %}
+  };
+  return rv.Pass();
+}
+{%- endif %}
+
+bool {{union.name}}::Equals(const {{union.name}}& other) const {
+  if (tag_ != other.which()) {
+    return false;
+  }
+
+  switch (tag_) {
+{%  for field in union.fields %}
+    case Tag::{{field.name|upper}}:
+      return mojo::internal::ValueTraits<{{field.kind|cpp_wrapper_type}}>::Equals(data_.{{field.name}}, other.get_{{field.name}}());
+{%- endfor %}
+  };
+
+  return false;
+}
+
+{%  for field in union.fields %}
+bool {{union.name}}::is_{{field.name}}() const {
+  return tag_ == Tag::{{field.name|upper}};
+}
+
+{{field.kind|cpp_pod_type}} {{union.name}}::get_{{field.name}}() const {
+  MOJO_DCHECK(tag_ == Tag::{{field.name|upper}});
+  return data_.{{field.name}};
+}
+
+void {{union.name}}::set_{{field.name}}({{field.kind|cpp_pod_type}} {{field.name}}) {
+  tag_ = Tag::{{field.name|upper}};
+  data_.{{field.name}} = {{field.name}};
+}
+{%- endfor %}

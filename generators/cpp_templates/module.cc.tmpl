@@ -24,6 +24,7 @@
 #include "mojo/public/cpp/bindings/lib/string_serialization.h"
 #include "mojo/public/cpp/bindings/lib/validate_params.h"
 #include "mojo/public/cpp/bindings/lib/validation_errors.h"
+#include "mojo/public/cpp/environment/logging.h"
 
 {%- for namespace in namespaces_as_array %}
 namespace {{namespace}} {
@@ -62,6 +63,11 @@ const uint32_t {{method_name}} = {{method.ordinal}};
 {%-   include "struct_definition.tmpl" %}
 {%- endfor %}
 
+{#--- Union definitions #}
+{%  for union in unions %}
+{%-   include "union_definition.tmpl" %}
+{%- endfor %}
+
 }  // namespace internal
 
 {#--- Struct Constants #}
@@ -76,6 +82,11 @@ const {{constant.kind|cpp_pod_type}} {{struct.name}}::{{constant.name}} = {{cons
 {%-   include "wrapper_class_definition.tmpl" %}
 {%- endfor %}
 
+{#--- Union builder definitions #}
+{%- for union in unions %}
+{%-   include "wrapper_union_class_definition.tmpl" %}
+{%- endfor %}
+
 {#--- Interface definitions #}
 {%- for interface in interfaces %}
 {%-   include "interface_definition.tmpl" %}
@@ -84,6 +95,11 @@ const {{constant.kind|cpp_pod_type}} {{struct.name}}::{{constant.name}} = {{cons
 {#--- Struct Serialization Helpers #}
 {%- for struct in structs %}
 {%-   include "struct_serialization_definition.tmpl" %}
+{%- endfor %}
+
+{#--- Union Serialization Helpers #}
+{%- for union in unions %}
+{%-   include "union_serialization_definition.tmpl" %}
 {%- endfor %}
 
 {%- for namespace in namespaces_as_array|reverse %}

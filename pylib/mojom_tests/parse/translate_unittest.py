@@ -58,7 +58,7 @@ class TranslateTest(unittest.TestCase):
         {"kind": "i32", "name": "a", "ordinal": None},
         {"kind": "s", "name": "b", "ordinal": None}]}]
     actual = translate.Translate(tree, "mojom_tree")
-    self.assertEquals(actual["union"], expected)
+    self.assertEquals(actual["unions"], expected)
 
 
 if __name__ == "__main__":
