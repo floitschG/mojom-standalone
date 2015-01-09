@@ -14,7 +14,6 @@ group("python") {
 
 # GYP version: mojo.gyp:mojo_python_system
 python_binary_module("mojo_system") {
-  python_base_module = ""
   configs = [ "../build/config:mojo_sdk" ]
   deps = [
     ":system_embedded",
@@ -40,7 +39,6 @@ python_binary_source_set("system_embedded") {
 }
 
 python_binary_module("mojo_system_impl") {
-  python_base_module = ""
   cython_sources = [
     "c_environment.pxd",
     "c_export.pxd",
