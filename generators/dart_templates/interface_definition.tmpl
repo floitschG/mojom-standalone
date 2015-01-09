@@ -26,8 +26,9 @@ abstract class {{interface.name}}Calls {
 {% else %}
   Future<{{interface.name}}_{{method.name}}_ResponseParams> call{{method.name}}(
 {%- for parameter in method.parameters -%}
-    {{parameter.kind|dart_decl_type}} {{parameter.name}}{% if not loop.last %}, {% endif %}
+    {{parameter.kind|dart_decl_type}} {{parameter.name}},
 {%- endfor -%}
+    [int requestId = -1]
   ) {
     assert(isOpen);
     var params = new {{interface.name}}_{{method.name}}_Params();
@@ -37,7 +38,7 @@ abstract class {{interface.name}}Calls {
     return enqueueMessageWithRequestID(
         {{interface.name}}_{{method.name}}_Params,
         k{{interface.name}}_{{method.name}}_name,
-        0,
+        requestId,
         bindings.kMessageExpectsResponse,
         params);
   }
@@ -48,13 +49,16 @@ abstract class {{interface.name}}Calls {
 class {{interface.name}}Client extends bindings.Client with {{interface.name}}Calls {
   {{interface.name}}Client(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
+  {{interface.name}}Client.fromHandle(int handle) : super.fromHandle(handle);
+
   void handleResponse(bindings.MessageReader reader) {
     switch (reader.name) {
 {%- for method in interface.methods %}
 {%- if method.response_parameters != None %}
       case k{{interface.name}}_{{method.name}}_name:
         var r = reader.decodeStruct({{interface.name}}_{{method.name}}_ResponseParams);
-        Completer c = completerQueue.removeAt(0);
+        Completer c = completerMap[reader.requestID];
+        completerMap[reader.requestID] = null;
         c.complete(r);
         break;
 {%- endif %}
@@ -73,6 +77,10 @@ with {{imported_from[interface.client]}}{{interface.client}}Calls
 {% endif -%} {
   {{interface.name}}Interface(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
+  {{interface.name}}Interface.fromHandle(int handle) : super.fromHandle(handle);
+
+  static const String name = '{{namespace|replace(".","::")}}::{{interface.name}}';
+
 {% for method in interface.methods %}
 {%- if method.response_parameters == None %}
   void {{method.name|stylize_method}}(
@@ -89,25 +97,32 @@ with {{imported_from[interface.client]}}{{interface.client}}Calls
 {%- endif %}
 {%- endfor %}
 
-  bindings.Message handleMessage(bindings.MessageReader reader) {
+  Future<bindings.Message> handleMessage(bindings.MessageReader reader) {
     switch (reader.name) {
 {%- for method in interface.methods %}
       case k{{interface.name}}_{{method.name}}_name:
         var params = reader.decodeStruct({{interface.name}}_{{method.name}}_Params);
 {%- if method.response_parameters == None %}
-        {{method.name|stylize_method}}(params);
-{%- else %}
-        var response = {{method.name|stylize_method}}(
+        {{method.name|stylize_method}}(
           {%- for parameter in method.parameters -%}
               params.{{parameter.name}}{% if not loop.last %}, {% endif %}
           {%- endfor -%}
         );
-        return buildResponseWithID(
-            {{interface.name}}_{{method.name}}_ResponseParams,
-            k{{interface.name}}_{{method.name}}_name,
-            reader.requestID,
-            bindings.kMessageIsResponse,
-            response);
+{%- else %}
+        return {{method.name|stylize_method}}(
+          {%- for parameter in method.parameters -%}
+              params.{{parameter.name}}{% if not loop.last %}, {% endif %}
+          {%- endfor -%}
+        ).then((response) {
+          if (response != null) {
+            return buildResponseWithID(
+                {{interface.name}}_{{method.name}}_ResponseParams,
+                k{{interface.name}}_{{method.name}}_name,
+                reader.requestID,
+                bindings.kMessageIsResponse,
+                response);
+          }
+        });
 {%- endif %}
         break;
 {%- endfor %}

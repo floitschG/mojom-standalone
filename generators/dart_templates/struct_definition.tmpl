@@ -57,7 +57,7 @@ class {{struct.name}} {
 {%-   if byte.packed_fields|length > 1 %}
     packed = 0;
 {%-     for packed_field in byte.packed_fields %}
-    packed |= (val.{{packed_field.field.name}} & 1) << {{packed_field.bit}};
+    packed |= ((val.{{packed_field.field.name}} ? 1 : 0) & 1) << {{packed_field.bit}};
 {%-     endfor %}
     encoder.writeUint8(packed);
 {%-   else %}
