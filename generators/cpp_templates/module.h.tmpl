@@ -56,7 +56,7 @@ typedef mojo::StructPtr<{{struct.name}}> {{struct.name}}Ptr;
 {#--- Union Forward Declarations -#}
 {%  for union in unions %}
 class {{union.name}};
-{%    if union|should_inline_union %}
+{%    if union|should_inline %}
 typedef mojo::InlinedStructPtr<{{union.name}}> {{union.name}}Ptr;
 {%    else %}
 typedef mojo::StructPtr<{{union.name}}> {{union.name}}Ptr;
