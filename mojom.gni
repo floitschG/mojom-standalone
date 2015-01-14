@@ -125,6 +125,24 @@ template("mojom") {
   generator_python_outputs =
       [ "{{source_gen_dir}}/{{source_name_part}}_mojom.py" ]
 
+  rebased_mojo_sdk_public_deps = []
+  if (defined(invoker.mojo_sdk_public_deps)) {
+    foreach(sdk_dep, invoker.mojo_sdk_public_deps) {
+      # Check that the SDK dep was not mistakenly given as an absolute path.
+      assert(get_path_info(sdk_dep, "abspath") != sdk_dep)
+      rebased_mojo_sdk_public_deps += [ rebase_path(sdk_dep, ".", mojo_root) ]
+    }
+  }
+
+  rebased_mojo_sdk_deps = []
+  if (defined(invoker.mojo_sdk_deps)) {
+    foreach(sdk_dep, invoker.mojo_sdk_deps) {
+      # Check that the SDK dep was not mistakenly given as an absolute path.
+      assert(get_path_info(sdk_dep, "abspath") != sdk_dep)
+      rebased_mojo_sdk_deps += [ rebase_path(sdk_dep, ".", mojo_root) ]
+    }
+  }
+
   if (defined(invoker.visibility)) {
     # Need to save this because the the target_name is overwritten inside the
     # action to be that of the action itself. Only define this in the case the
@@ -171,33 +189,21 @@ template("mojom") {
         rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
 
     public_deps = rebase_path([ "mojo/public/cpp/bindings" ], ".", mojo_root)
+    public_deps += rebased_mojo_sdk_public_deps
     if (defined(invoker.public_deps)) {
       public_deps += invoker.public_deps
-    }
-    if (defined(invoker.mojo_sdk_public_deps)) {
-      foreach(sdk_dep, invoker.mojo_sdk_public_deps) {
-        # Check that the SDK dep was not mistakenly given as an absolute path.
-        assert(get_path_info(sdk_dep, "abspath") != sdk_dep)
-        public_deps += [ rebase_path(sdk_dep, ".", mojo_root) ]
-      }
     }
 
     deps = [
       ":$generator_target_name",
     ]
+    deps += rebased_mojo_sdk_deps
     if (defined(invoker.deps)) {
       deps += invoker.deps
     }
-    if (defined(invoker.mojo_sdk_deps)) {
-      foreach(sdk_dep, invoker.mojo_sdk_deps) {
-        # Check that the SDK dep was not mistakenly given as an absolute path.
-        assert(get_path_info(sdk_dep, "abspath") != sdk_dep)
-        deps += [ rebase_path(sdk_dep, ".", mojo_root) ]
-      }
-    }
   }
 
-  all_deps = []
+  all_deps = rebased_mojo_sdk_deps + rebased_mojo_sdk_public_deps
   if (defined(invoker.deps)) {
     all_deps += invoker.deps
   }
