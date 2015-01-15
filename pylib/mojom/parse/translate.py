@@ -152,7 +152,7 @@ class _MojomBuilder(object):
         _AttributeListToDict(tree.module.attribute_list) if tree.module else {}
     self.mojom['structs'] = \
         _MapTreeForType(StructToDict, tree.definition_list, ast.Struct)
-    self.mojom['unions'] = \
+    self.mojom['union'] = \
         _MapTreeForType(UnionToDict, tree.definition_list, ast.Union)
     self.mojom['interfaces'] = \
         _MapTreeForType(InterfaceToDict, tree.definition_list, ast.Interface)
