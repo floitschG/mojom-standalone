@@ -298,7 +298,6 @@ class Generator(generator.Generator):
       'imports': self.GetImports(),
       'interfaces': self.GetQualifiedInterfaces(),
       'module': ComputeStaticValues(self.module),
-      'namespace': self.module.namespace,
       'structs': self.GetStructs(),
     }
 
