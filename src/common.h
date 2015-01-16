@@ -40,9 +40,6 @@ class ScopedPyRef {
 
   ~ScopedPyRef();
 
-  // Releases ownership of the python object contained by this instance.
-  PyObject* Release();
-
   operator PyObject*() const;
 
  private:

@@ -44,12 +44,6 @@ ScopedPyRef::ScopedPyRef(PyObject* object, ScopedPyRefAcquire)
   Py_XINCREF(object_);
 }
 
-PyObject* ScopedPyRef::Release() {
-  PyObject* object = object_;
-  object_ = nullptr;
-  return object;
-}
-
 ScopedPyRef::~ScopedPyRef() {
   if (object_) {
     ScopedGIL acquire_gil;
