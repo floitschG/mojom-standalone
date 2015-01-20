@@ -80,6 +80,7 @@ class {{interface|name}}Client extends bindings.Client with {{interface|name}}Ca
 }
 
 
+{#--- TODO(zra): Remove Interface suffix from the name of this class. #}
 class {{interface|name}}Interface extends bindings.Interface
 {% if interface.client != None -%}
 with {{imported_from[interface.client]}}{{interface.client|upper_camel_case}}Calls
