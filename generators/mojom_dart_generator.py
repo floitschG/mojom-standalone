@@ -253,13 +253,13 @@ def AppendDecodeParams(initial_params, kind, bit):
     else:
       params.append(GetDartTrueFalse(mojom.IsNullableKind(kind)))
   if mojom.IsInterfaceKind(kind):
-    params.append('%sClient.newFromEndpoint' % GetDartType(kind))
+    params.append('%sProxy.newFromEndpoint' % GetDartType(kind))
   if mojom.IsArrayKind(kind) and mojom.IsInterfaceKind(kind.kind):
-    params.append('%sClient.newFromEndpoint' % GetDartType(kind.kind))
+    params.append('%sProxy.newFromEndpoint' % GetDartType(kind.kind))
   if mojom.IsInterfaceRequestKind(kind):
-    params.append('%sInterface.newFromEndpoint' % GetDartType(kind.kind))
+    params.append('%sStub.newFromEndpoint' % GetDartType(kind.kind))
   if mojom.IsArrayKind(kind) and mojom.IsInterfaceRequestKind(kind.kind):
-    params.append('%sInterface.newFromEndpoint' % GetDartType(kind.kind.kind))
+    params.append('%sStub.newFromEndpoint' % GetDartType(kind.kind.kind))
   if mojom.IsArrayKind(kind):
     params.append(GetArrayExpectedLength(kind))
   return params

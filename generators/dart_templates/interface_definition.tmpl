@@ -43,17 +43,19 @@ abstract class {{interface|name}}Calls {
 {%- endfor %}
 }
 
-class {{interface|name}}Client extends bindings.Client with {{interface|name}}Calls {
-  {{interface|name}}Client(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
+class {{interface|name}}Proxy extends bindings.Proxy with {{interface|name}}Calls {
+  {{interface|name}}Proxy(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
-  {{interface|name}}Client.fromHandle(core.MojoHandle handle) :
+  {{interface|name}}Proxy.fromHandle(core.MojoHandle handle) :
       super.fromHandle(handle);
 
-  {{interface|name}}Client.unbound() : super.unbound();
+  {{interface|name}}Proxy.unbound() : super.unbound();
 
-  static {{interface|name}}Client newFromEndpoint(
+  final String name = '{{namespace|replace(".","::")}}::{{interface|name}}';
+
+  static {{interface|name}}Proxy newFromEndpoint(
       core.MojoMessagePipeEndpoint endpoint) =>
-      new {{interface|name}}Client(endpoint);
+      new {{interface|name}}Proxy(endpoint);
 
   void handleResponse(bindings.ServiceMessage message) {
     switch (message.header.type) {
@@ -79,26 +81,26 @@ class {{interface|name}}Client extends bindings.Client with {{interface|name}}Ca
   }
 }
 
-{#--- TODO(zra): Remove Interface suffix from the name of this class.
+{#--- TODO(zra): Remove Stub suffix from the name of this class.
       This is tricky because some mojom files have interfaces named both
-      X and XClient. This leads to an XClient for the Client of X, and an
-      XClient for the Interface of XClient, which conflict with eachother. #}
-class {{interface|name}}Interface extends bindings.Interface
+      X and XProxy. This leads to an XProxy for the Proxy of X, and an
+      XProxy for the Stub of XProxy, which conflict with eachother. #}
+class {{interface|name}}Stub extends bindings.Stub
 {% if interface.client != None -%}
 with {{imported_from[interface.client]}}{{interface.client|upper_camel_case}}Calls
 {% endif -%} {
-  {{interface|name}}Interface _delegate = null;
+  {{interface|name}}Stub _delegate = null;
 
-  {{interface|name}}Interface(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
+  {{interface|name}}Stub(core.MojoMessagePipeEndpoint endpoint) : super(endpoint);
 
-  {{interface|name}}Interface.fromHandle(core.MojoHandle handle) :
+  {{interface|name}}Stub.fromHandle(core.MojoHandle handle) :
       super.fromHandle(handle);
 
-  {{interface|name}}Interface.unbound() : super.unbound();
+  {{interface|name}}Stub.unbound() : super.unbound();
 
-  static {{interface|name}}Interface newFromEndpoint(
+  static {{interface|name}}Stub newFromEndpoint(
       core.MojoMessagePipeEndpoint endpoint) =>
-      new {{interface|name}}Interface(endpoint);
+      new {{interface|name}}Stub(endpoint);
 
   static const String name = '{{namespace|replace(".","::")}}::{{interface|name}}';
 
@@ -182,8 +184,8 @@ with {{imported_from[interface.client]}}{{interface.client|upper_camel_case}}Cal
     return null;
   }
 
-  {{interface|name}}Interface get delegate => _delegate;
-      set delegate({{interface|name}}Interface d) {
+  {{interface|name}}Stub get delegate => _delegate;
+      set delegate({{interface|name}}Stub d) {
     assert(_delegate == null);
     _delegate = d;
   }
