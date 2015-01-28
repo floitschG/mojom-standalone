@@ -381,7 +381,6 @@ class Generator(generator.Generator):
     'interface_response_name': GetInterfaceResponseName,
     'response_struct_from_method': GetResponseStructFromMethod,
     'struct_from_method': GetStructFromMethod,
-    'upper_camel_case': UpperCamelCase,
     'struct_size': lambda ps: ps.GetTotalSize() + _HEADER_SIZE,
   }
 
