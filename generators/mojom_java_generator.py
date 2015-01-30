@@ -212,7 +212,7 @@ def EncodeMethod(context, kind, variable, offset, bit):
   return 'encode(%s)' % ', '.join(params)
 
 def GetPackage(module):
-  if 'JavaPackage' in module.attributes:
+  if module.attributes and 'JavaPackage' in module.attributes:
     return ParseStringAttribute(module.attributes['JavaPackage'])
   # Default package.
   if module.namespace:
@@ -356,7 +356,7 @@ def GetStructFromMethod(method):
       False, generator.GetStructFromMethod(method))
 
 def GetConstantsMainEntityName(module):
-  if 'JavaConstantsClassName' in module.attributes:
+  if module.attributes and 'JavaConstantsClassName' in module.attributes:
     return ParseStringAttribute(module.attributes['JavaConstantsClassName'])
   # This constructs the name of the embedding classes for module level constants
   # by extracting the mojom's filename and prepending it to Constants.
