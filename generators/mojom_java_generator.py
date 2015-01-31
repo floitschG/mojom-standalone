@@ -15,6 +15,7 @@ import zipfile
 
 from jinja2 import contextfilter
 
+import mojom.fileutil as fileutil
 import mojom.generate.generator as generator
 import mojom.generate.module as mojom
 from mojom.generate.template_expander import UseJinja
@@ -471,12 +472,7 @@ class Generator(generator.Generator):
     return exports
 
   def DoGenerateFiles(self):
-    if not os.path.exists(self.output_dir):
-      try:
-        os.makedirs(self.output_dir)
-      except:
-        # Ignore errors on directory creation.
-        pass
+    fileutil.EnsureDirectoryExists(self.output_dir)
 
     # Keep this above the others as .GetStructs() changes the state of the
     # module, annotating structs with required information.

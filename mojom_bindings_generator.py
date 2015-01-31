@@ -34,6 +34,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "pylib"))
 
 from mojom.error import Error
+import mojom.fileutil as fileutil
 from mojom.generate.data import OrderedModuleFromData
 from mojom.parse.parser import Parse
 from mojom.parse.translate import Translate
@@ -207,8 +208,7 @@ def main():
 
   generator_modules = LoadGenerators(args.generators_string)
 
-  if not os.path.exists(args.output_dir):
-    os.makedirs(args.output_dir)
+  fileutil.EnsureDirectoryExists(args.output_dir)
 
   processor = MojomProcessor(lambda filename: filename in args.filename)
   for filename in args.filename:
