@@ -364,6 +364,7 @@ def ConstantFromData(module, data, parent_kind):
     scope = (module.namespace, )
   # TODO(mpcomplete): maybe we should only support POD kinds.
   constant.kind = KindFromData(module.kinds, data['kind'], scope)
+  constant.parent_kind = parent_kind
   constant.value = FixupExpression(module, data.get('value'), scope, None)
 
   value = mojom.ConstantValue(module, parent_kind, constant)

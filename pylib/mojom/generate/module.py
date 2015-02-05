@@ -171,10 +171,11 @@ class EnumValue(NamedValue):
 
 
 class Constant(object):
-  def __init__(self, name=None, kind=None, value=None):
+  def __init__(self, name=None, kind=None, value=None, parent_kind=None):
     self.name = name
     self.kind = kind
     self.value = value
+    self.parent_kind = parent_kind
 
 
 class Field(object):
