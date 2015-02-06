@@ -513,7 +513,8 @@ def IsAnyHandleKind(kind):
 
 
 def IsMoveOnlyKind(kind):
-  return IsObjectKind(kind) or IsAnyHandleKind(kind)
+  return (not IsStringKind(kind) and IsObjectKind(kind)) or \
+      IsAnyHandleKind(kind)
 
 
 def IsCloneableKind(kind):
