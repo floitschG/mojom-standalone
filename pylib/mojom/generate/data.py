@@ -410,7 +410,7 @@ def ModuleFromData(data):
   module.structs = map(
       lambda struct: StructFromData(module, struct), data['structs'])
   module.unions = map(
-      lambda union: UnionFromData(module, struct), data.get('unions', []))
+      lambda union: UnionFromData(module, union), data.get('unions', []))
   module.interfaces = map(
       lambda interface: InterfaceFromData(module, interface),
       data['interfaces'])
