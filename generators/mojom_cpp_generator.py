@@ -314,6 +314,8 @@ def GetMapValidateParams(value_kind):
       'true' if element_is_nullable else 'false',
       GetArrayValidateParams(value_kind))
 
+_HEADER_SIZE = 8
+
 class Generator(generator.Generator):
 
   cpp_filters = {
@@ -345,6 +347,7 @@ class Generator(generator.Generator):
     "is_string_kind": mojom.IsStringKind,
     "is_struct_kind": mojom.IsStructKind,
     "is_struct_with_handles": IsStructWithHandles,
+    "struct_size": lambda ps: ps.GetTotalSize() + _HEADER_SIZE,
     "struct_from_method": generator.GetStructFromMethod,
     "response_struct_from_method": generator.GetResponseStructFromMethod,
     "stylize_method": generator.StudlyCapsToCamel,
