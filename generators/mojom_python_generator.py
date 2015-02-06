@@ -191,14 +191,6 @@ def GetFieldGroup(byte):
   assert len(byte.packed_fields) == 1
   return GetFieldDescriptor(byte.packed_fields[0])
 
-def GetResponseStructFromMethod(method):
-  return generator.GetDataHeader(
-      False, generator.GetResponseStructFromMethod(method))
-
-def GetStructFromMethod(method):
-  return generator.GetDataHeader(
-      False, generator.GetStructFromMethod(method))
-
 def ComputeStaticValues(module):
   in_progress = set()
   computed = set()
@@ -287,8 +279,8 @@ class Generator(generator.Generator):
     'field_group': GetFieldGroup,
     'fully_qualified_name': GetFullyQualifiedName,
     'name': GetNameForElement,
-    'response_struct_from_method': GetResponseStructFromMethod,
-    'struct_from_method': GetStructFromMethod,
+    'response_struct_from_method': generator.GetResponseStructFromMethod,
+    'struct_from_method': generator.GetStructFromMethod,
   }
 
   @UseJinja('python_templates/module.py.tmpl', filters=python_filters)

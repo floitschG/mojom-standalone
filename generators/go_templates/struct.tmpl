@@ -10,7 +10,7 @@ type {{struct|name(exported)}} struct {
 }
 
 func (s *{{struct|name(exported)}}) Encode(encoder *bindings.Encoder) error {
-	encoder.StartStruct({{struct.packed|struct_size}}, {{struct.packed.packed_fields|length}})
+	encoder.StartStruct({{struct.versions[-1].num_bytes}}, {{struct.packed.packed_fields|length}})
 {% for byte in struct.bytes %}
 {%   for packed_field in byte.packed_fields %}
 	{{encode('s.'~packed_field.field|name(exported), packed_field.field.kind)|tab_indent()}}

@@ -167,6 +167,7 @@ def GetStructFromMethod(method):
         param.kind, param.ordinal)
   struct.packed = pack.PackedStruct(struct)
   struct.bytes = pack.GetByteLayout(struct.packed)
+  struct.versions = pack.GetVersionInfo(struct.packed)
   return struct
 
 def GetResponseStructFromMethod(method):
@@ -178,6 +179,7 @@ def GetResponseStructFromMethod(method):
         param.kind, param.ordinal)
   struct.packed = pack.PackedStruct(struct)
   struct.bytes = pack.GetByteLayout(struct.packed)
+  struct.versions = pack.GetVersionInfo(struct.packed)
   return struct
 
 class Generator(generator.Generator):
@@ -199,7 +201,6 @@ class Generator(generator.Generator):
     'name': GetNameForElement,
     'response_struct_from_method': GetResponseStructFromMethod,
     'struct_from_method': GetStructFromMethod,
-    'struct_size': lambda ps: ps.GetTotalSize(),
     'tab_indent': lambda s, size = 1: ('\n' + '\t' * size).join(s.splitlines())
   }
 
