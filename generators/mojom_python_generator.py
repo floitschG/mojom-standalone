@@ -296,7 +296,7 @@ class Generator(generator.Generator):
     return {
       'enums': self.module.enums,
       'imports': self.GetImports(),
-      'interfaces': self.GetQualifiedInterfaces(),
+      'interfaces': self.module.interfaces,
       'module': ComputeStaticValues(self.module),
       'namespace': self.module.namespace,
       'structs': self.GetStructs(),
@@ -311,26 +311,6 @@ class Generator(generator.Generator):
     for each in self.module.imports:
       each['python_module'] = MojomToPythonImport(each['module_name'])
     return self.module.imports
-
-  def GetQualifiedInterfaces(self):
-    """
-    Returns the list of interfaces of the module. Each interface that has a
-    client will have a reference to the representation of the client interface
-    in the 'qualified_client' field.
-    """
-    interfaces = self.module.interfaces
-    all_interfaces = [] + interfaces
-    for each in self.GetImports():
-      all_interfaces += [data.KindFromImport(x, each) for x in
-                         each['module'].interfaces];
-    interfaces_by_name = dict((x.name, x) for x in all_interfaces)
-    for interface in interfaces:
-      if interface.client:
-        assert interface.client in interfaces_by_name, (
-            'Unable to find interface %s declared as client of %s.' %
-            (interface.client, interface.name))
-        interface.qualified_client = interfaces_by_name[interface.client]
-    return sorted(interfaces, key=lambda i: (bool(i.client), i.name))
 
   def GetJinjaParameters(self):
     return {
