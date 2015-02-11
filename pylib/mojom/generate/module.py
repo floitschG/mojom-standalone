@@ -131,7 +131,6 @@ PRIMITIVES = (
 
 
 ATTRIBUTE_MIN_VERSION = 'MinVersion'
-ATTRIBUTE_CLIENT = 'Client'
 
 
 class NamedValue(object):
@@ -370,9 +369,10 @@ class Interface(ReferenceKind):
     self.methods.append(method)
     return method
 
+  # TODO(451323): Remove when the language backends no longer rely on this.
   @property
   def client(self):
-    return self.attributes.get(ATTRIBUTE_CLIENT) if self.attributes else None
+    return None
 
 
 class EnumField(object):
