@@ -230,8 +230,7 @@ bool {{class_name}}Stub::Accept(mojo::Message* message) {
 
       params->DecodePointersAndHandles(message->mutable_handles());
       {{alloc_params(method.parameters)|indent(6)}}
-      // A null |sink_| typically means there is a missing call to
-      // InterfacePtr::set_client().
+      // A null |sink_| means no implementation was bound.
       assert(sink_);
       sink_->{{method.name}}({{pass_params(method.parameters)}});
       return true;
@@ -262,8 +261,7 @@ bool {{class_name}}Stub::AcceptWithResponder(
               message->request_id(), responder);
       {{class_name}}::{{method.name}}Callback callback(runnable);
       {{alloc_params(method.parameters)|indent(6)}}
-      // A null |sink_| typically means there is a missing call to
-      // InterfacePtr::set_client().
+      // A null |sink_| means no implementation was bound.
       assert(sink_);
       sink_->{{method.name}}(
 {%- if method.parameters -%}{{pass_params(method.parameters)}}, {% endif -%}callback);
@@ -311,8 +309,6 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
   }
 {%- endif %}
 
-  // A null |sink_| typically means there is a missing call to
-  // InterfacePtr::set_client().
   assert(sink_);
   return sink_->Accept(message);
 }
@@ -343,8 +339,6 @@ bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
   }
 {%- endif %}
 
-  // A null |sink_| typically means there is a missing call to
-  // InterfacePtr::set_client().
   assert(sink_);
   return sink_->Accept(message);
 }
