@@ -82,16 +82,21 @@ bool {{class_name}}::Validate(const void* data,
   // the message comes from an older version.
   const {{class_name}}* object = static_cast<const {{class_name}}*>(data);
 
-  static const uint32_t kVersionSizePairs[{{struct.versions|length}}][2] = {
+  static const struct {
+    uint32_t version;
+    uint32_t num_bytes;
+  } kVersionSizes[] = {
 {%- for version in struct.versions -%}
     { {{version.version}}, {{version.num_bytes}} }{% if not loop.last %}, {% endif -%}
 {%- endfor -%}
   };
 
-  if (object->header_.version <= {{struct.versions[-1].version}}) {
-    for (size_t i = 0; i < {{struct.versions|length}}; ++i) {
-      if (object->header_.version <= kVersionSizePairs[i][0]) {
-        if (object->header_.num_bytes == kVersionSizePairs[i][1])
+  if (object->header_.version <=
+          kVersionSizes[MOJO_ARRAYSIZE(kVersionSizes) - 1].version) {
+    // Scan in reverse order to optimize for more recent versions.
+    for (int i = MOJO_ARRAYSIZE(kVersionSizes) - 1; i >= 0; --i) {
+      if (object->header_.version >= kVersionSizes[i].version) {
+        if (object->header_.num_bytes == kVersionSizes[i].num_bytes)
           break;
 
         ReportValidationError(
@@ -99,7 +104,8 @@ bool {{class_name}}::Validate(const void* data,
         return false;
       }
     }
-  } else if (object->header_.num_bytes < {{struct.versions[-1].num_bytes}}) {
+  } else if (object->header_.num_bytes <
+                 kVersionSizes[MOJO_ARRAYSIZE(kVersionSizes) - 1].num_bytes) {
     ReportValidationError(
         mojo::internal::VALIDATION_ERROR_UNEXPECTED_STRUCT_HEADER);
     return false;
