@@ -12,6 +12,7 @@ import sys
 import mojo_bindings.messaging as messaging
 import mojo_bindings.promise as promise
 import mojo_bindings.serialization as serialization
+import mojo_system
 
 
 class MojoEnumType(type):
@@ -272,6 +273,10 @@ class InterfaceManager(object):
     impl.manager = InstanceManager(router, error_handler)
 
     router.Start()
+
+  def NewRequest(self):
+    pipe = mojo_system.MessagePipe()
+    return (self.Proxy(pipe.handle0), InterfaceRequest(pipe.handle1))
 
   def _InternalProxy(self, router, error_handler):
     if error_handler is None:
