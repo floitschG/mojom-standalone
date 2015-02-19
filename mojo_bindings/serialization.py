@@ -170,11 +170,12 @@ def NeededPaddingForAlignment(value, alignment=8):
 def _GetVersion(groups):
   if not len(groups):
     return 0
-  return max([x.version for x in groups])
+  return max([x.GetMaxVersion() for x in groups])
 
 
 def _FilterGroups(groups, version):
-  return [group for group in groups if group.GetVersion() <= version]
+  return [group.Filter(version) for
+          group in groups if group.GetMinVersion() <= version]
 
 
 def _GetStruct(groups):
