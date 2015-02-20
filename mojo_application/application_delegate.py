@@ -10,6 +10,7 @@ import shell_mojom
 
 import mojo_system
 
+# pylint: disable=unused-argument
 class ApplicationDelegate:
   def Initialize(self, shell, application):
     """

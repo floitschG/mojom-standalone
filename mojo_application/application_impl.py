@@ -13,12 +13,17 @@ import mojo_system
 
 class ApplicationImpl(application_mojom.Application):
   def __init__(self, delegate, app_request_handle):
+    self.shell = None
+    self.url = None
+    self.args = None
     self._delegate = delegate
     self._providers = []
     application_mojom.Application.manager.Bind(self, app_request_handle)
 
   def Initialize(self, shell, url, args):
     self.shell = shell
+    self.url = url
+    self.args = args
     self._delegate.Initialize(shell, self)
 
   def AcceptConnection(self, requestor_url, services, exposed_services):
