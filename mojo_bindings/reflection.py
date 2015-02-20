@@ -555,6 +555,7 @@ def _StubAccept(methods):
       # Close the connection in case of error.
       logging.warning(
           'Error occured in accept method. Connection will be closed.')
+      logging.debug("Exception", exc_info=True)
       if self.impl.manager:
         self.impl.manager.Close()
       return False
