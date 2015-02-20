@@ -508,8 +508,8 @@ class MapType(SerializableType):
       '__module__': __name__,
       'DESCRIPTOR': {
         'fields': [
-          SingleFieldGroup('keys', MapType._GetArrayType(key_type), 0, 0),
-          SingleFieldGroup('values', MapType._GetArrayType(value_type), 1, 1),
+          SingleFieldGroup('keys', MapType._GetArrayType(key_type), 0, 1),
+          SingleFieldGroup('values', MapType._GetArrayType(value_type), 1, 2),
         ],
       }
     }
