@@ -252,7 +252,7 @@ def GetImports(module):
       if method.response_parameters:
         all_structs.append(GetResponseStructFromMethod(method))
 
-  if len(all_structs) > 0:
+  if len(all_structs) > 0 or len(module.interfaces) > 0:
     _imports['mojo/public/go/bindings'] = 'bindings'
   for struct in all_structs:
     for field in struct.fields:

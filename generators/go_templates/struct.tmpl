@@ -4,13 +4,14 @@
 
 {% macro define(struct, exported=True) %}
 type {{struct|name(exported)}} struct {
-{% for packed_field in struct.packed.packed_fields %}
-	{{packed_field.field|name(exported)}} {{packed_field.field.kind|go_type}}
+{% for field in struct.fields %}
+	{{field|name(exported)}} {{field.kind|go_type}}
 {% endfor %}
 }
 
 func (s *{{struct|name(exported)}}) Encode(encoder *bindings.Encoder) error {
-	encoder.StartStruct({{struct.versions[-1].num_bytes}}, {{struct.versions[-1].version}})
+{% set HEADER_SIZE = 8 %}
+	encoder.StartStruct({{struct.versions[-1].num_bytes - HEADER_SIZE}}, {{struct.versions[-1].version}})
 {% for byte in struct.bytes %}
 {%   for packed_field in byte.packed_fields %}
 	{{encode('s.'~packed_field.field|name(exported), packed_field.field.kind)|tab_indent()}}
