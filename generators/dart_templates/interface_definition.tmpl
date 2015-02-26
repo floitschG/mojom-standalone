@@ -19,7 +19,8 @@ abstract class {{interface|name}} implements core.Listener {
 
   void close({bool nodefer : false}) => stub.close(nodefer: nodefer);
 
-  StreamSubscription<int> listen() => stub.listen();
+  StreamSubscription<int> listen({Function onClosed}) =>
+      stub.listen(onClosed: onClosed);
 
   {{interface|name}} get delegate => stub.delegate;
   set delegate({{interface|name}} d) {
@@ -211,5 +212,3 @@ class {{interface|name}}Stub extends bindings.Stub {
 
 
 {#--- TODO(zra): Validation #}
-
-
