@@ -175,6 +175,12 @@ class Promise(object):
     self._onRejected = None
 
 
+def async(f):
+  def _ResolvePromises(*args):
+    return Promise.All(*args).Then(lambda r: f(*r))
+  return _ResolvePromises
+
+
 def _IterateAction(iterable):
   def _Run(x):
     for f in iterable:
