@@ -133,6 +133,7 @@ template("mojom") {
         [ "{{source_gen_dir}}/{{source_name_part}}.mojom.js" ]
     generator_dart_outputs =
         [ "{{source_gen_dir}}/{{source_name_part}}.mojom.dart" ]
+    generator_go_outputs = [ "${root_gen_dir}/go/src/{{source_dir}}/{{source_name_part}}/{{source_name_part}}.mojom.go" ]
     generator_python_outputs =
         [ "{{source_gen_dir}}/{{source_name_part}}_mojom.py" ]
     generator_java_outputs =
@@ -176,8 +177,8 @@ template("mojom") {
       inputs = generator_sources
       sources = invoker.sources
       outputs = generator_cpp_outputs + generator_dart_outputs +
-                generator_java_outputs + generator_js_outputs +
-                generator_python_outputs
+                generator_go_outputs + generator_java_outputs +
+                generator_js_outputs + generator_python_outputs
       args = [
         "{{source}}",
         "--use_bundled_pylibs",
