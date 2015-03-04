@@ -45,6 +45,13 @@ type {{interface|name}} interface {
 type {{interface|name}}Request bindings.InterfaceRequest
 type {{interface|name}}Pointer bindings.InterfacePointer
 
+// CreateMessagePipeFor{{interface|name}} creates a message pipe for use with the
+// {{interface|name}} interface with a {{interface|name}}Request on one end and a {{interface|name}}Pointer on the other.
+func CreateMessagePipeFor{{interface|name}}() ({{interface|name}}Request, {{interface|name}}Pointer) {
+        r, p := bindings.CreateMessagePipeForMojoInterface()
+        return {{interface|name}}Request(r), {{interface|name}}Pointer(p)
+}
+
 {% for method in interface.methods %}
 const {{interface|name(False)}}_{{method|name}}_Name = {{method.ordinal}}
 {% endfor %}
