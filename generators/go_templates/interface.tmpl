@@ -23,13 +23,13 @@
 
 
 
-{%- macro flags(response_parameters, is_renponse) -%}
+{%- macro flags(response_parameters, is_response) -%}
 {%- if not response_parameters -%}
 	bindings.MessageNoFlag
-{%- elif is_parameter: -%}
-	bindings.MessageExpectsResponseFlag
-{%- else -%}
+{%- elif is_response: -%}
 	bindings.MessageIsResponseFlag
+{%- else -%}
+	bindings.MessageExpectsResponseFlag
 {%- endif -%}
 {%- endmacro -%}
 
