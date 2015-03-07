@@ -76,6 +76,11 @@ class {{interface|name}}ProxyImpl extends bindings.Proxy {
         break;
     }
   }
+
+  String toString() {
+    var superString = super.toString();
+    return "{{interface|name}}ProxyImpl($superString)";
+  }
 }
 
 
@@ -157,6 +162,10 @@ class {{interface|name}}Proxy implements bindings.ProxyBase {
       new {{interface|name}}Proxy.fromEndpoint(endpoint);
 
   void close() => impl.close();
+
+  String toString() {
+    return "{{interface|name}}Proxy($impl)";
+  }
 }
 
 
@@ -255,5 +264,10 @@ class {{interface|name}}Stub extends bindings.Stub {
       set impl({{interface|name}} d) {
     assert(_impl == null);
     _impl = d;
+  }
+
+  String toString() {
+    var superString = super.toString();
+    return "{{interface|name}}Stub($superString)";
   }
 }
