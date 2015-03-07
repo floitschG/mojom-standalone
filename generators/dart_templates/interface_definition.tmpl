@@ -38,13 +38,10 @@ abstract class {{interface|name}} {
 
 class {{interface|name}}ProxyImpl extends bindings.Proxy {
   {{interface|name}}ProxyImpl.fromEndpoint(
-      core.MojoMessagePipeEndpoint endpoint,
-      {bool doListen: true, Function onClosed}) :
-      super.fromEndpoint(endpoint, doListen: doListen, onClosed: onClosed);
+      core.MojoMessagePipeEndpoint endpoint) : super.fromEndpoint(endpoint);
 
-  {{interface|name}}ProxyImpl.fromHandle(core.MojoHandle handle,
-      {bool doListen: true, Function onClosed}) :
-      super.fromHandle(handle, doListen: doListen, onClosed: onClosed);
+  {{interface|name}}ProxyImpl.fromHandle(core.MojoHandle handle) :
+      super.fromHandle(handle);
 
   {{interface|name}}ProxyImpl.unbound() : super.unbound();
 
@@ -138,17 +135,13 @@ class {{interface|name}}Proxy implements bindings.ProxyBase {
       ptr = new _{{interface|name}}ProxyCalls(proxyImpl);
 
   {{interface|name}}Proxy.fromEndpoint(
-      core.MojoMessagePipeEndpoint endpoint,
-      {bool doListen: true, Function onClosed}) :
-      impl = new {{interface|name}}ProxyImpl.fromEndpoint(
-          endpoint, doListen: doListen, onClosed: onClosed) {
+      core.MojoMessagePipeEndpoint endpoint) :
+      impl = new {{interface|name}}ProxyImpl.fromEndpoint(endpoint) {
     ptr = new _{{interface|name}}ProxyCalls(impl);
   }
 
-  {{interface|name}}Proxy.fromHandle(core.MojoHandle handle,
-      {bool doListen: true, Function onClosed}) :
-      impl = new {{interface|name}}ProxyImpl.fromHandle(
-          handle, doListen: doListen, onClosed: onClosed) {
+  {{interface|name}}Proxy.fromHandle(core.MojoHandle handle) :
+      impl = new {{interface|name}}ProxyImpl.fromHandle(handle) {
     ptr = new _{{interface|name}}ProxyCalls(impl);
   }
 
@@ -172,35 +165,18 @@ class {{interface|name}}Proxy implements bindings.ProxyBase {
 class {{interface|name}}Stub extends bindings.Stub {
   {{interface|name}} _impl = null;
 
-  {{interface|name}}Stub.fromEndpoint(core.MojoMessagePipeEndpoint endpoint,
-      { {{interface|name}} impl, bool doListen: true, Function onClosed}) :
-      super.fromEndpoint(endpoint, doListen: false) {
-    assert(!doListen || (impl != null));
-    if (impl != null) {
-      this._impl = impl;
-    }
-    if (doListen) {
-      listen(onClosed: onClosed);
-    }
-  }
+  {{interface|name}}Stub.fromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint, [this._impl])
+      : super.fromEndpoint(endpoint);
 
-  {{interface|name}}Stub.fromHandle(core.MojoHandle handle,
-      { {{interface|name}} impl, bool doListen: true, Function onClosed}) :
-      super.fromHandle(handle, doListen: false) {
-    assert(!doListen || (impl != null));
-    if (impl != null) {
-      this._impl = impl;
-    }
-    if (doListen) {
-      listen(onClosed: onClosed);
-    }
-  }
+  {{interface|name}}Stub.fromHandle(core.MojoHandle handle, [this._impl])
+      : super.fromHandle(handle);
 
   {{interface|name}}Stub.unbound() : super.unbound();
 
   static {{interface|name}}Stub newFromEndpoint(
       core.MojoMessagePipeEndpoint endpoint) =>
-      new {{interface|name}}Stub.fromEndpoint(endpoint, doListen: false);
+      new {{interface|name}}Stub.fromEndpoint(endpoint);
 
   static const String name = {{interface|name}}Name;
 
