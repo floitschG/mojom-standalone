@@ -58,13 +58,13 @@ const {{interface|name(False)}}_{{method|name}}_Name = {{method.ordinal}}
 
 type {{interface|name}}Proxy struct {
 	router *bindings.Router
-	ids *bindings.Counter
+	ids bindings.Counter
 }
 
 func New{{interface|name}}Proxy(p {{interface|name}}Pointer, waiter bindings.AsyncWaiter) *{{interface|name}}Proxy {
 	return &{{interface|name}}Proxy{
 		bindings.NewRouter(p.PassMessagePipe(), waiter),
-		&bindings.Counter{},
+		bindings.NewCounter(),
 	}
 }
 
@@ -87,7 +87,7 @@ func (p *{{interface|name}}Proxy) {{method|name}}{{declare_request_params(method
 		Type: {{interface|name(False)}}_{{method|name}}_Name,
 		Flags: {{flags(method.response_parameters, False)}},
 {%   if method.response_parameters %}
-		RequestId: p.ids.Next(),
+		RequestId: p.ids.Count(),
 {%   endif %}
 	}
 	var message *bindings.Message
