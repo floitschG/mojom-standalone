@@ -154,7 +154,7 @@ class {{interface|name}}Proxy implements bindings.ProxyBase {
       core.MojoMessagePipeEndpoint endpoint) =>
       new {{interface|name}}Proxy.fromEndpoint(endpoint);
 
-  void close() => impl.close();
+  Future close() => impl.close();
 
   String toString() {
     return "{{interface|name}}Proxy($impl)";
