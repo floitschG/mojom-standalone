@@ -93,23 +93,29 @@ func (p *{{interface|name}}Proxy) {{method|name}}{{declare_request_params(method
 	var message *bindings.Message
 	if message, err = bindings.EncodeMessage(header, payload); err != nil {
 		err = fmt.Errorf("can't encode request: %v", err.Error())
+		p.Close_proxy()
 		return
 	}
 {% if method.response_parameters %}
 	readResult := <-p.router.AcceptWithResponse(message)
 	if err = readResult.Error; err != nil {
+		p.Close_proxy()
 		return
 	}
 	var response {{method|response_struct_from_method|name(False)}}
 	if err = readResult.Message.DecodePayload(&response); err != nil {
 		err = fmt.Errorf("can't decode response: %v", err.Error())
+		p.Close_proxy()
 		return
 	}
 {%   for field in (method|response_struct_from_method).fields %}
 	{{field|name(False)}} = response.{{field|name(False)}}
 {%   endfor %}
 {% else %}
-	err = p.router.Accept(message)
+	if err = p.router.Accept(message); err != nil {
+		p.Close_proxy()
+		return
+	}
 {% endif %}
 	return
 }
