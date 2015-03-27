@@ -180,6 +180,7 @@ template("mojom") {
                 generator_js_outputs + generator_python_outputs
       args = [
         "{{source}}",
+        "--dart_mojo_root=${mojo_root}",
         "--use_bundled_pylibs",
         "-d",
         rebase_path("//", root_build_dir),
@@ -334,21 +335,21 @@ template("mojom") {
       output,
     ]
 
-    invoker_base_dir = ""
-    if (defined(invoker.base_dir)) {
-      invoker_base_dir =
-          rebase_path(invoker.base_dir, "$root_build_dir/../../", ".")
+    invoker_import_from = ""
+    if (defined(invoker.import_from)) {
+      invoker_import_from =
+          rebase_path(invoker.import_from, "$root_build_dir/../../", ".")
     }
 
-    rebase_base_dir =
-        rebase_path("$root_build_dir/gen/$invoker_base_dir", root_build_dir)
+    rebase_import_from =
+        rebase_path("$root_build_dir/gen/$invoker_import_from", root_build_dir)
     if (defined(invoker.sources)) {
       rebase_inputs = rebase_path(inputs, root_build_dir)
     }
     rebase_zip_inputs = rebase_path(zip_inputs, root_build_dir)
     rebase_output = rebase_path(output, root_build_dir)
     args = [
-      "--base-dir=$rebase_base_dir",
+      "--base-dir=$rebase_import_from",
       "--zip-inputs=$rebase_zip_inputs",
       "--output=$rebase_output",
     ]
