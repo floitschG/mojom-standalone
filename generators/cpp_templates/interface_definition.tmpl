@@ -115,31 +115,33 @@ class {{class_name}}_{{method.name}}_ProxyToResponder
     : public {{class_name}}::{{method.name}}Callback::Runnable {
  public:
   virtual ~{{class_name}}_{{method.name}}_ProxyToResponder() {
+    // Is the Mojo application destroying the callback without running it
+    // and without first closing the pipe?
+    bool callback_was_dropped = responder_ && responder_->IsValid();
+    // If the Callback was dropped then deleting the responder will close
+    // the pipe so the calling application knows to stop waiting for a reply.
     delete responder_;
-    // TODO(rudominer) DCHECK if |was_run_| is false and we don't have evidence
-    // that we are in a legitamte shutdown case such as the Connector detected
-    // an error or Close() was invoked.
+    MOJO_DCHECK(!callback_was_dropped)  << "The callback passed to "
+        "{{class_name}}::{{method.name}}({%- if method.parameters -%}{{pass_params(method.parameters)}}, {% endif -%}callback) "
+        "was never run.";
   }
 
   {{class_name}}_{{method.name}}_ProxyToResponder(
       uint64_t request_id,
-      mojo::MessageReceiver* responder)
+      mojo::MessageReceiverWithStatus* responder)
       : request_id_(request_id),
-        responder_(responder),
-        was_run_(false) {
+        responder_(responder) {
   }
 
   void Run({{interface_macros.declare_params("in_", method.response_parameters)}}) const override;
 
  private:
   uint64_t request_id_;
-  mutable mojo::MessageReceiver* responder_;
-  mutable bool was_run_;
+  mutable mojo::MessageReceiverWithStatus* responder_;
   MOJO_DISALLOW_COPY_AND_ASSIGN({{class_name}}_{{method.name}}_ProxyToResponder);
 };
 void {{class_name}}_{{method.name}}_ProxyToResponder::Run(
     {{interface_macros.declare_params("in_", method.response_parameters)}}) const {
-  was_run_ = true;
   {{struct_macros.get_serialized_size(response_params_struct, "in_%s")}}
   mojo::internal::ResponseMessageBuilder builder(
       {{message_name}}, size, request_id_);
@@ -158,6 +160,8 @@ void {{class_name}}_{{method.name}}_ProxyToResponder::Run(
 {{class_name}}Stub::{{class_name}}Stub()
     : sink_(nullptr) {
 }
+
+{{class_name}}Stub::~{{interface.name}}Stub() {}
 
 {#--- Stub definition #}
 
@@ -188,7 +192,7 @@ bool {{class_name}}Stub::Accept(mojo::Message* message) {
 }
 
 bool {{class_name}}Stub::AcceptWithResponder(
-    mojo::Message* message, mojo::MessageReceiver* responder) {
+    mojo::Message* message, mojo::MessageReceiverWithStatus* responder) {
 {%- if interface.methods %}
   switch (message->header()->name) {
 {%-   for method in interface.methods %}
