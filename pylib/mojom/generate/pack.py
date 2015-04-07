@@ -134,6 +134,14 @@ class PackedStruct(object):
         next_min_version = packed_field.field.min_version
       packed_field.min_version = next_min_version
 
+      if (packed_field.min_version != 0 and
+          mojom.IsReferenceKind(packed_field.field.kind) and
+          not packed_field.field.kind.is_nullable):
+        raise Exception("Non-nullable fields are only allowed in version 0 of "
+                        "a struct. %s.%s is defined with [MinVersion=%d]."
+                            % (self.struct.name, packed_field.field.name,
+                               packed_field.min_version))
+
     src_field = src_fields[0]
     src_field.offset = 0
     src_field.bit = 0
