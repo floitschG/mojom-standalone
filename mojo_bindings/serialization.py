@@ -4,6 +4,7 @@
 
 """Utility classes for serialization"""
 
+import itertools
 import struct
 
 
@@ -116,6 +117,11 @@ class Serialization(object):
       self._struct_per_version[version] = _GetStruct(self._GetGroups(version))
     return self._struct_per_version[version]
 
+  def _Flatten(self, value):
+    if type(value) is tuple:
+      return itertools.chain(*value)
+    return [value]
+
   def Serialize(self, obj, handle_offset):
     """
     Serialize the given obj. handle_offset is the the first value to use when
@@ -134,7 +140,7 @@ class Serialization(object):
           len(data) - position,
           data,
           handle_offset + len(handles))
-      to_pack.append(entry)
+      to_pack.extend(self._Flatten(entry))
       handles.extend(new_handles)
       position = position + group.GetByteSize()
     self._GetMainStruct().pack_into(data, HEADER_STRUCT.size, *to_pack)
@@ -150,18 +156,25 @@ class Serialization(object):
     if context.IsInitialContext():
       context.ClaimMemory(0, size)
     version_struct = self._GetStruct(version)
-    entitities = version_struct.unpack_from(context.data, HEADER_STRUCT.size)
+    entities = version_struct.unpack_from(context.data, HEADER_STRUCT.size)
     filtered_groups = self._GetGroups(version)
     if ((version <= self.version and
          size != version_struct.size + HEADER_STRUCT.size) or
         size < version_struct.size + HEADER_STRUCT.size):
       raise DeserializationException('Struct size in incorrect.')
     position = HEADER_STRUCT.size
-    for (group, value) in zip(filtered_groups, entitities):
+    enties_index = 0
+    for group in filtered_groups:
       position = position + NeededPaddingForAlignment(position,
                                                       group.GetByteSize())
+      enties_count = len(group.GetTypeCode())
+      if enties_count == 1:
+        value = entities[enties_index]
+      else:
+        value = tuple(entities[enties_index:enties_index+enties_count])
       fields.update(group.Deserialize(value, context.GetSubContext(position)))
       position += group.GetByteSize()
+      enties_index += enties_count
 
 
 def NeededPaddingForAlignment(value, alignment=8):
