@@ -67,14 +67,20 @@
       "null {{name}} in {{struct_display_name}}");
 {%-     endif %}
 {%-   elif kind|is_any_handle_kind %}
-{%-     if kind|is_interface_kind or kind|is_interface_request_kind %}
+{%-     if kind|is_interface_kind %}
+  mojo::internal::InterfacePointerToData({{input_field}}.Pass(), &{{output}}->{{name}});
+{%-     elif kind|is_interface_request_kind %}
   {{output}}->{{name}} = {{input_field}}.PassMessagePipe().release();
 {%-     else %}
   {{output}}->{{name}} = {{input_field}}.release();
 {%-     endif %}
 {%-     if not kind|is_nullable_kind %}
   MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
+{%-       if kind|is_interface_kind %}
+      !{{output}}->{{name}}.handle.is_valid(),
+{%-       else %}
       !{{output}}->{{name}}.is_valid(),
+{%-       endif %}
       mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE,
       "invalid {{name}} in {{struct_display_name}}");
 {%-     endif %}
@@ -119,7 +125,9 @@
 {%-       else %}
     Deserialize_({{input}}->{{name}}.ptr, &{{output_field}});
 {%-       endif %}
-{%-     elif kind|is_interface_kind or kind|is_interface_request_kind %}
+{%-     elif kind|is_interface_kind %}
+    mojo::internal::InterfaceDataToPointer(&{{input}}->{{name}}, &{{output_field}});
+{%-     elif kind|is_interface_request_kind %}
     {{output_field}}.Bind(mojo::MakeScopedHandle(mojo::internal::FetchAndReset(&{{input}}->{{name}})));
 {%-     elif kind|is_any_handle_kind %}
     {{output_field}}.reset(mojo::internal::FetchAndReset(&{{input}}->{{name}}));
