@@ -510,10 +510,6 @@ def IsNonInterfaceHandleKind(kind):
           IsSharedBufferKind(kind))
 
 
-# TODO(yzshen): consider to make the handle-related type checks more clear:
-# - rename IsHandleKind to IsGenericHandleKind.
-# - change IsAnyHandleKind to exclude interface.
-# - remove IsNonInterfaceHandleKind.
 def IsAnyHandleKind(kind):
   return (IsNonInterfaceHandleKind(kind) or
           IsInterfaceKind(kind) or

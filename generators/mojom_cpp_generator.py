@@ -77,9 +77,7 @@ def GetCppType(kind):
     return "%s_Data*" % GetNameForKind(kind, internal=True)
   if mojom.IsUnionKind(kind):
     return "%s_Data" % GetNameForKind(kind, internal=True)
-  if mojom.IsInterfaceKind(kind):
-    return "mojo::internal::Interface_Data"
-  if mojom.IsInterfaceRequestKind(kind):
+  if mojom.IsInterfaceKind(kind) or mojom.IsInterfaceRequestKind(kind):
     return "mojo::MessagePipeHandle"
   if mojom.IsEnumKind(kind):
     return "int32_t"
@@ -217,9 +215,7 @@ def GetCppFieldType(kind):
   if mojom.IsMapKind(kind):
     return ("mojo::internal::StructPointer<mojo::internal::Map_Data<%s, %s>>" %
             (GetCppType(kind.key_kind), GetCppType(kind.value_kind)))
-  if mojom.IsInterfaceKind(kind):
-    return "mojo::internal::Interface_Data"
-  if mojom.IsInterfaceRequestKind(kind):
+  if mojom.IsInterfaceKind(kind) or mojom.IsInterfaceRequestKind(kind):
     return "mojo::MessagePipeHandle"
   if mojom.IsEnumKind(kind):
     return GetNameForKind(kind)

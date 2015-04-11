@@ -66,9 +66,7 @@ func (s *{{struct|name(exported)}}) Decode(decoder *bindings.Decoder) error {
 {% macro encode(value, kind, level=0) %}
 {% if kind|is_nullable %}
 if {{value}} == nil {
-{%   if kind|is_interface %}
-	encoder.WriteInvalidInterface()
-{%   elif kind|is_handle %}
+{%   if kind|is_handle %}
 	encoder.WriteInvalidHandle()
 {%   else %}
 	encoder.WriteNullPointer()
@@ -120,11 +118,7 @@ if err := encoder.Finish(); err != nil {
 if err := encoder.WriteInt32(int32({{value}})); err != nil {
 	return err
 }
-{% elif kind|is_interface %}
-if err := encoder.WriteInterface({{value}}.PassMessagePipe()); err != nil {
-	return err
-}
-{% elif kind|is_interface_request %}
+{% elif kind|is_handle_owner %}
 if err := encoder.WriteHandle({{value}}.PassMessagePipe()); err != nil {
 	return err
 }
@@ -162,7 +156,7 @@ if err != nil {
 	return err
 }
 if handle{{level}}.IsValid() {
-{%   if kind|is_interface or kind|is_interface_request %}
+{%   if kind|is_handle_owner %}
 	handleOwner := bindings.NewMessagePipeHandleOwner(handle{{level}})
 	{{value}} = {% if kind|is_nullable %}&{% endif %}{{kind|go_type(False)}}{handleOwner}
 {%   else %}

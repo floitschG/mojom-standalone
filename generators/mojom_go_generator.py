@@ -60,9 +60,9 @@ _kind_infos = {
 _imports = {}
 
 def GetBitSize(kind):
-  if isinstance(kind, (mojom.Array, mojom.Map, mojom.Struct, mojom.Interface)):
+  if isinstance(kind, (mojom.Array, mojom.Map, mojom.Struct)):
     return 64
-  if isinstance(kind, (mojom.InterfaceRequest)):
+  if isinstance(kind, (mojom.InterfaceRequest, mojom.Interface)):
     kind = mojom.MSGPIPE
   if isinstance(kind, mojom.Enum):
     kind = mojom.INT32
@@ -166,18 +166,14 @@ def ExpressionToText(token):
 def DecodeSuffix(kind):
   if mojom.IsEnumKind(kind):
     return DecodeSuffix(mojom.INT32)
-  if mojom.IsInterfaceKind(kind):
-    return 'Interface'
-  if mojom.IsInterfaceRequestKind(kind):
+  if mojom.IsInterfaceKind(kind) or mojom.IsInterfaceRequestKind(kind):
     return DecodeSuffix(mojom.MSGPIPE)
   return _kind_infos[kind].decode_suffix
 
 def EncodeSuffix(kind):
   if mojom.IsEnumKind(kind):
     return EncodeSuffix(mojom.INT32)
-  if mojom.IsInterfaceKind(kind):
-    return 'Interface'
-  if mojom.IsInterfaceRequestKind(kind):
+  if mojom.IsInterfaceKind(kind) or mojom.IsInterfaceRequestKind(kind):
     return EncodeSuffix(mojom.MSGPIPE)
   return _kind_infos[kind].encode_suffix
 
@@ -307,8 +303,8 @@ class Generator(generator.Generator):
     'is_array': mojom.IsArrayKind,
     'is_enum': mojom.IsEnumKind,
     'is_handle': mojom.IsAnyHandleKind,
-    'is_interface': mojom.IsInterfaceKind,
-    'is_interface_request': mojom.IsInterfaceRequestKind,
+    'is_handle_owner': lambda kind:
+        mojom.IsInterfaceKind(kind) or mojom.IsInterfaceRequestKind(kind),
     'is_map': mojom.IsMapKind,
     'is_none_or_empty': lambda array: array == None or len(array) == 0,
     'is_nullable': mojom.IsNullableKind,
