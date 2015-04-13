@@ -29,15 +29,17 @@
   }
 {%-   endif %}
 {%-   if kind|is_array_kind or kind|is_string_kind %}
-  if (!{{wrapper_type}}::Data_::Validate<
-          {{kind|get_array_validate_params|indent(10)}}>(
+  const mojo::internal::ArrayValidateParams {{name}}_validate_params =
+      {{kind|get_array_validate_params|indent(6)}};
+  if (!{{wrapper_type}}::Data_::Validate(
               mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
-              bounds_checker)) {
+              bounds_checker, &{{name}}_validate_params)) {
 {%-   elif kind|is_map_kind %}
-  if (!{{wrapper_type}}::Data_::Validate<
-          {{kind.value_kind|get_map_validate_params|indent(10)}}>(
+  const mojo::internal::ArrayValidateParams {{name}}_validate_params =
+      {{kind.value_kind|get_map_validate_params|indent(6)}};
+  if (!{{wrapper_type}}::Data_::Validate(
               mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
-              bounds_checker)) {
+              bounds_checker, &{{name}}_validate_params)) {
 {%-   elif kind|is_struct_kind %}
   if (!{{kind|get_name_for_kind}}::Data_::Validate(
           mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
