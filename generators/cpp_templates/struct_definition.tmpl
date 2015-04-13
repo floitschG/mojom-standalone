@@ -61,15 +61,20 @@
 {%- macro _validate_handle(struct, packed_field) %}
 {%-   set name = packed_field.field.name %}
 {%-   set kind = packed_field.field.kind %}
+{%-   if kind|is_interface_kind %}
+  const mojo::Handle {{name}}_handle = object->{{name}}.handle;
+{%-   else %}
+  const mojo::Handle {{name}}_handle = object->{{name}};
+{%-   endif %}
 {%-   if not kind|is_nullable_kind %}
-  if (object->{{name}}.value() == mojo::internal::kEncodedInvalidHandleValue) {
+  if ({{name}}_handle.value() == mojo::internal::kEncodedInvalidHandleValue) {
     ReportValidationError(
         mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE,
         "invalid {{name}} field in {{struct.name}} struct");
     return false;
   }
 {%-   endif %}
-  if (!bounds_checker->ClaimHandle(object->{{name}})) {
+  if (!bounds_checker->ClaimHandle({{name}}_handle)) {
     ReportValidationError(mojo::internal::VALIDATION_ERROR_ILLEGAL_HANDLE);
     return false;
   }
