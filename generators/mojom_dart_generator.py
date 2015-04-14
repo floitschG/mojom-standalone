@@ -370,8 +370,6 @@ class Generator(generator.Generator):
     'dart_type': DartDeclType,
     'name': GetNameForElement,
     'interface_response_name': GetInterfaceResponseName,
-    'response_struct_from_method': generator.GetResponseStructFromMethod,
-    'struct_from_method': generator.GetStructFromMethod,
   }
 
   def GetParameters(self, args):
@@ -382,7 +380,7 @@ class Generator(generator.Generator):
       "enums": self.module.enums,
       "module": self.module,
       "structs": self.GetStructs() + self.GetStructsFromMethods(),
-      "interfaces": self.module.interfaces,
+      "interfaces": self.GetInterfaces(),
       "imported_interfaces": self.GetImportedInterfaces(),
       "imported_from": self.ImportedFrom(),
     }

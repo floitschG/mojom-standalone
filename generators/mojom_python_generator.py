@@ -279,8 +279,6 @@ class Generator(generator.Generator):
     'field_group': GetFieldGroup,
     'fully_qualified_name': GetFullyQualifiedName,
     'name': GetNameForElement,
-    'response_struct_from_method': generator.GetResponseStructFromMethod,
-    'struct_from_method': generator.GetStructFromMethod,
   }
 
   @UseJinja('python_templates/module.py.tmpl', filters=python_filters)
@@ -288,7 +286,7 @@ class Generator(generator.Generator):
     return {
       'enums': self.module.enums,
       'imports': self.GetImports(),
-      'interfaces': self.module.interfaces,
+      'interfaces': self.GetInterfaces(),
       'module': ComputeStaticValues(self.module),
       'namespace': self.module.namespace,
       'structs': self.GetStructs(),
