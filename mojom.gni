@@ -113,6 +113,7 @@ template("mojom") {
       "$generator_root/pylib/mojom/__init__.py",
       "$generator_root/pylib/mojom/error.py",
       "$generator_root/pylib/mojom/generate/__init__.py",
+      "$generator_root/pylib/mojom/generate/constant_resolver.py",
       "$generator_root/pylib/mojom/generate/data.py",
       "$generator_root/pylib/mojom/generate/generator.py",
       "$generator_root/pylib/mojom/generate/module.py",

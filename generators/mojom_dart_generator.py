@@ -7,6 +7,7 @@
 import os
 import re
 
+import mojom.generate.constant_resolver as resolver
 import mojom.generate.generator as generator
 import mojom.generate.module as mojom
 import mojom.generate.pack as pack
@@ -329,8 +330,10 @@ def TranslateConstants(token):
 
   return token
 
-def ExpressionToText(value):
-  return TranslateConstants(value)
+def ExpressionToText(token):
+  if isinstance(token, (mojom.EnumValue, mojom.NamedValue)):
+    return str(token.resolved_value)
+  return TranslateConstants(token)
 
 def GetArrayKind(kind, size = None):
   if size is None:
@@ -378,7 +381,7 @@ class Generator(generator.Generator):
       "imports": self.GetImports(args),
       "kinds": self.module.kinds,
       "enums": self.module.enums,
-      "module": self.module,
+      "module": resolver.ResolveConstants(self.module, ExpressionToText),
       "structs": self.GetStructs() + self.GetStructsFromMethods(),
       "interfaces": self.GetInterfaces(),
       "imported_interfaces": self.GetImportedInterfaces(),

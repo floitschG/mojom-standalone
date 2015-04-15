@@ -89,7 +89,7 @@ class {{struct|name}} extends bindings.Struct {
 
 {#--- Constants #}
 {%-  for constant in struct.constants %}
-  static final {{constant.name}} = {{constant.value|expression_to_text}};
+  static const {{constant.name}} = {{constant.value|expression_to_text}};
 {%-  endfor %}
 
 {#--- initDefaults() #}
