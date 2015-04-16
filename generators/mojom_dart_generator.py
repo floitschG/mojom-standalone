@@ -6,6 +6,8 @@
 
 import os
 import re
+import shutil
+import sys
 
 import mojom.generate.constant_resolver as resolver
 import mojom.generate.generator as generator
@@ -405,8 +407,12 @@ class Generator(generator.Generator):
     link = self.MatchMojomFilePath("%s.dart" % self.module.name)
     if os.path.exists(os.path.join(self.output_dir, link)):
       os.unlink(os.path.join(self.output_dir, link))
-    os.symlink(os.path.join(self.output_dir, path),
-               os.path.join(self.output_dir, link))
+    if sys.platform == "win32":
+      shutil.copy(os.path.join(self.output_dir, path),
+                  os.path.join(self.output_dir, link))
+    else:
+      os.symlink(os.path.join(self.output_dir, path),
+                 os.path.join(self.output_dir, link))
 
   def GetImports(self, args):
     used_names = set()
