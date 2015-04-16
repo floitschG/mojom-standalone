@@ -355,6 +355,11 @@ def IsPointerArrayKind(kind):
   sub_kind = kind.kind
   return mojom.IsObjectKind(sub_kind)
 
+def GetImportUri(module):
+  elements = module.namespace.split('.')
+  elements.append("%s" % module.name)
+  return os.path.join(*elements)
+
 class Generator(generator.Generator):
 
   dart_filters = {
@@ -393,16 +398,17 @@ class Generator(generator.Generator):
     return self.GetParameters(args)
 
   def GenerateFiles(self, args):
-    self.Write(self.GenerateLibModule(args),
-        self.MatchMojomFilePath("%s.dart" % self.module.name))
+    elements = self.module.namespace.split('.')
+    elements.append("%s.dart" % self.module.name)
+    path = os.path.join("dart-gen", *elements)
+    self.Write(self.GenerateLibModule(args), path)
+    link = self.MatchMojomFilePath("%s.dart" % self.module.name)
+    if os.path.exists(os.path.join(self.output_dir, link)):
+      os.unlink(os.path.join(self.output_dir, link))
+    os.symlink(os.path.join(self.output_dir, path),
+               os.path.join(self.output_dir, link))
 
   def GetImports(self, args):
-    mojo_root_arg = next(
-        (x for x in args if x.startswith("--dart_mojo_root")), "")
-    (_, _, mojo_root_path) = mojo_root_arg.partition("=")
-    if not mojo_root_path.startswith("//"):
-      raise Exception("Malformed mojo SDK root: " + mojo_root_path)
-    mojo_root_path = mojo_root_path[2:]  # strip //
     used_names = set()
     for each_import in self.module.imports:
       simple_name = each_import["module_name"].split(".")[0]
@@ -419,15 +425,7 @@ class Generator(generator.Generator):
       each_import["unique_name"] = unique_name + '_mojom'
       counter += 1
 
-      # At this point, a module's path is reletive to the root of the repo.
-      # However, imports of libraries from the Mojo SDK are always reletive to
-      # root of the Mojo SDK, which may be different from the root of the repo.
-      # This code uses the --dart_mojo_root argument to ensure that Mojo SDK
-      # imports are reletive to the Mojo SDK root.
-      path = each_import['module'].path
-      if os.path.commonprefix([mojo_root_path, path]) == mojo_root_path:
-        path = os.path.relpath(path, mojo_root_path)
-      each_import["rebased_path"] = path
+      each_import["rebased_path"] = GetImportUri(each_import['module'])
     return self.module.imports
 
   def GetImportedInterfaces(self):
