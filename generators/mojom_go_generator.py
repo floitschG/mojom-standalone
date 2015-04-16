@@ -331,7 +331,7 @@ class Generator(generator.Generator):
     struct = mojom.Struct(params_class, module=method.interface.module)
     for param in method.parameters:
       struct.AddField("in%s" % GetNameForElement(param),
-          param.kind, param.ordinal)
+          param.kind, param.ordinal, attributes=param.attributes)
     return self._AddStructComputedData(False, struct)
 
   # Overrides the implementation from the base class in order to customize the
@@ -342,5 +342,5 @@ class Generator(generator.Generator):
     struct = mojom.Struct(params_class, module=method.interface.module)
     for param in method.response_parameters:
       struct.AddField("out%s" % GetNameForElement(param),
-          param.kind, param.ordinal)
+          param.kind, param.ordinal, attributes=param.attributes)
     return self._AddStructComputedData(False, struct)

@@ -94,10 +94,20 @@ class Generator(object):
   def _AddInterfaceComputedData(self, interface):
     """Adds computed data to the given interface. The data is computed once and
     used repeatedly in the generation process."""
+    interface.version = 0
     for method in interface.methods:
+      if method.min_version is not None:
+        interface.version = max(interface.version, method.min_version)
+
       method.param_struct = self._GetStructFromMethod(method)
+      interface.version = max(interface.version,
+                              method.param_struct.versions[-1].version)
+
       if method.response_parameters is not None:
         method.response_param_struct = self._GetResponseStructFromMethod(method)
+        interface.version = max(
+            interface.version,
+            method.response_param_struct.versions[-1].version)
       else:
         method.response_param_struct = None
     return interface
@@ -107,7 +117,8 @@ class Generator(object):
     params_class = "%s_%s_Params" % (method.interface.name, method.name)
     struct = mojom.Struct(params_class, module=method.interface.module)
     for param in method.parameters:
-      struct.AddField(param.name, param.kind, param.ordinal)
+      struct.AddField(param.name, param.kind, param.ordinal,
+                      attributes=param.attributes)
     return self._AddStructComputedData(False, struct)
 
   def _GetResponseStructFromMethod(self, method):
@@ -115,5 +126,6 @@ class Generator(object):
     params_class = "%s_%s_ResponseParams" % (method.interface.name, method.name)
     struct = mojom.Struct(params_class, module=method.interface.module)
     for param in method.response_parameters:
-      struct.AddField(param.name, param.kind, param.ordinal)
+      struct.AddField(param.name, param.kind, param.ordinal,
+                      attributes=param.attributes)
     return self._AddStructComputedData(False, struct)
