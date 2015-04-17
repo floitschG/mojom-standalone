@@ -227,6 +227,11 @@ def GetCppFieldType(kind):
     return "mojo::internal::StringPointer"
   return _kind_to_cpp_type[kind]
 
+def GetUnionGetterReturnType(kind):
+  if mojom.IsStructKind(kind):
+    return "%s&" % GetCppWrapperType(kind)
+  return GetCppResultWrapperType(kind)
+
 def IsStructWithHandles(struct):
   for pf in struct.packed.packed_fields:
     if mojom.IsAnyHandleKind(pf.field.kind):
@@ -335,6 +340,7 @@ class Generator(generator.Generator):
     "cpp_pod_type": GetCppPodType,
     "cpp_result_type": GetCppResultWrapperType,
     "cpp_type": GetCppType,
+    "cpp_union_getter_return_type": GetUnionGetterReturnType,
     "cpp_wrapper_type": GetCppWrapperType,
     "default_value": DefaultValue,
     "expression_to_text": ExpressionToText,
