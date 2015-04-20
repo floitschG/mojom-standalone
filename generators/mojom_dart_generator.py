@@ -407,12 +407,19 @@ class Generator(generator.Generator):
     link = self.MatchMojomFilePath("%s.dart" % self.module.name)
     if os.path.exists(os.path.join(self.output_dir, link)):
       os.unlink(os.path.join(self.output_dir, link))
-    if sys.platform == "win32":
-      shutil.copy(os.path.join(self.output_dir, path),
-                  os.path.join(self.output_dir, link))
-    else:
-      os.symlink(os.path.join(self.output_dir, path),
-                 os.path.join(self.output_dir, link))
+    try:
+      if sys.platform == "win32":
+        shutil.copy(os.path.join(self.output_dir, path),
+                    os.path.join(self.output_dir, link))
+      else:
+        os.symlink(os.path.join(self.output_dir, path),
+                   os.path.join(self.output_dir, link))
+    except OSError as e:
+      # Errno 17 is file already exists. If the link fails because file already
+      # exists assume another instance of this script tried to create the same
+      # file and continue on.
+      if e.errno != 17:
+        raise e
 
   def GetImports(self, args):
     used_names = set()
