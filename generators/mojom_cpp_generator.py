@@ -228,7 +228,8 @@ def GetCppFieldType(kind):
   return _kind_to_cpp_type[kind]
 
 def GetUnionGetterReturnType(kind):
-  if mojom.IsStructKind(kind):
+  if (mojom.IsStructKind(kind) or mojom.IsArrayKind(kind) or
+      mojom.IsMapKind(kind)):
     return "%s&" % GetCppWrapperType(kind)
   return GetCppResultWrapperType(kind)
 

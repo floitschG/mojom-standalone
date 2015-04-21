@@ -43,6 +43,18 @@ void SerializeUnion_({{union.name}}Ptr input, mojo::internal::Buffer* buf,
         Serialize_(*(input_acc.data()->{{field.name}}), buf, &{{field.name}}_ptr->ptr);
 {%      elif field.kind|is_struct_kind %}
         Serialize_(mojo::internal::Forward(*(input_acc.data()->{{field.name}})), buf, &{{field.name}}_ptr->ptr);
+{%      elif field.kind|is_array_kind %}
+        const mojo::internal::ArrayValidateParams {{field.name}}_validate_params =
+            {{field.kind|get_array_validate_params|indent(16)}};
+        SerializeArray_(
+            mojo::internal::Forward(*(input_acc.data()->{{field.name}})),
+            buf, &{{field.name}}_ptr->ptr, &{{field.name}}_validate_params);
+{%      elif field.kind|is_map_kind %}
+        const mojo::internal::ArrayValidateParams {{field.name}}_validate_params =
+            {{field.kind.value_kind|get_map_validate_params|indent(16)}};
+        SerializeMap_(
+            mojo::internal::Forward(*(input_acc.data()->{{field.name}})),
+            buf, &{{field.name}}_ptr->ptr, &{{field.name}}_validate_params);
 {%-     endif %}
 {%    else %}
         result->data.f_{{field.name}} = input_acc.data()->{{field.name}};
