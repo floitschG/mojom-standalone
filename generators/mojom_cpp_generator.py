@@ -381,7 +381,7 @@ class Generator(generator.Generator):
       "kinds": self.module.kinds,
       "enums": self.module.enums,
       "structs": self.GetStructs(),
-      "unions": self.module.unions,
+      "unions": self.GetUnions(),
       "interfaces": self.GetInterfaces(),
     }
 
