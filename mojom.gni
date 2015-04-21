@@ -4,9 +4,9 @@
 
 import("../../mojo_sdk.gni")
 
-# Generate C++ and JavaScript source files from mojom files. The output files
-# will go under the generated file directory tree with the same path as each
-# input file.
+# Generate C++/JavaScript/Java/Python/Dart/Go source files from mojom files. The
+# output files will go under the generated file directory tree with the same
+# path as each input file.
 #
 # If a mojom target is intended for use in a client repo where the location of
 # the Mojo SDK will be different than its location in the Mojo repo,
@@ -212,7 +212,6 @@ template("mojom") {
       testonly = invoker.testonly
     }
     if (defined(invoker.sources)) {
-      sources = process_file_template(invoker.sources, generator_cpp_outputs)
       data = process_file_template(invoker.sources, generator_js_outputs)
     }
 
@@ -220,6 +219,9 @@ template("mojom") {
         rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
 
     public_deps = rebase_path([ "mojo/public/cpp/bindings" ], ".", mojo_root)
+    if (defined(invoker.sources)) {
+      public_deps += [ ":${target_name}_cpp_sources" ]
+    }
     public_deps += rebased_mojo_sdk_public_deps
     if (defined(invoker.public_deps)) {
       public_deps += invoker.public_deps
@@ -350,6 +352,24 @@ template("mojom") {
     ]
     if (defined(invoker.sources)) {
       args += [ "--link-inputs=$rebase_inputs" ]
+    }
+  }
+
+  if (defined(invoker.sources)) {
+    # The generated C++ source files. The main reason to introduce this target
+    # is so that mojo/public/cpp/bindings can depend on mojom interfaces without
+    # circular dependencies.
+    source_set("${target_name}_cpp_sources") {
+      if (defined(invoker.visibility)) {
+        visibility = target_visibility + invoker.visibility
+      }
+      if (defined(invoker.testonly)) {
+        testonly = invoker.testonly
+      }
+      sources = process_file_template(invoker.sources, generator_cpp_outputs)
+      public_configs =
+          rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
+      deps = [ ":$generator_target_name" ]
     }
   }
 
