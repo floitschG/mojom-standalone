@@ -360,7 +360,7 @@ def IsPointerArrayKind(kind):
 def GetImportUri(module):
   elements = module.namespace.split('.')
   elements.append("%s" % module.name)
-  return os.path.join(*elements)
+  return os.path.join("mojom", *elements)
 
 class Generator(generator.Generator):
 
@@ -402,7 +402,7 @@ class Generator(generator.Generator):
   def GenerateFiles(self, args):
     elements = self.module.namespace.split('.')
     elements.append("%s.dart" % self.module.name)
-    path = os.path.join("dart-gen", *elements)
+    path = os.path.join("dart-gen", "mojom", *elements)
     self.Write(self.GenerateLibModule(args), path)
     link = self.MatchMojomFilePath("%s.dart" % self.module.name)
     if os.path.exists(os.path.join(self.output_dir, link)):
