@@ -233,6 +233,7 @@ bool {{class_name}}Stub::AcceptWithResponder(
 }
 
 bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
+  assert(sink_);
   switch (message->header()->name) {
 {%- for method in interface.methods %}
     case internal::k{{class_name}}_{{method.name}}_Name: {
@@ -247,19 +248,17 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
                internal::{{class_name}}_{{method.name}}_Params_Data>(message)) {
         return false;
       }
-      break;
+      return sink_->Accept(message);
     }
 {%- endfor %}
-    default: {
-      // Unrecognized message.
-      ReportValidationError(
-          mojo::internal::VALIDATION_ERROR_MESSAGE_HEADER_UNKNOWN_METHOD);
-      return false;
-    }
+    default:
+      break;
   }
 
-  assert(sink_);
-  return sink_->Accept(message);
+  // Unrecognized message.
+  ReportValidationError(
+      mojo::internal::VALIDATION_ERROR_MESSAGE_HEADER_UNKNOWN_METHOD);
+  return false;
 }
 
 {#--- Response validator definitions #}
@@ -269,6 +268,7 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
 }
 
 bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
+  assert(sink_);
   if (!mojo::internal::ValidateMessageIsResponse(message))
     return false;
   switch (message->header()->name) {
@@ -278,18 +278,16 @@ bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
                internal::{{class_name}}_{{method.name}}_ResponseParams_Data>(message)) {
         return false;
       }
-      break;
+      return sink_->Accept(message);
     }
 {%- endfor %}
-    default: {
-      // Unrecognized message.
-      ReportValidationError(
-          mojo::internal::VALIDATION_ERROR_MESSAGE_HEADER_UNKNOWN_METHOD);
-      return false;
-    }
+    default:
+      break;
   }
 
-  assert(sink_);
-  return sink_->Accept(message);
+  // Unrecognized message.
+  ReportValidationError(
+      mojo::internal::VALIDATION_ERROR_MESSAGE_HEADER_UNKNOWN_METHOD);
+  return false;
 }
 {%- endif -%}
