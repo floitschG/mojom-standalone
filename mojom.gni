@@ -358,11 +358,11 @@ template("mojom") {
   if (defined(invoker.sources)) {
     # The generated C++ source files. The main reason to introduce this target
     # is so that mojo/public/cpp/bindings can depend on mojom interfaces without
-    # circular dependencies.
+    # circular dependencies. It means that the target is missing the dependency
+    # on mojo/public/cpp/bindings. No external targets should depend directly on
+    # this target *except* mojo/public/cpp/bindings and other
+    # *_cpp_sources targets.
     source_set("${target_name}_cpp_sources") {
-      if (defined(invoker.visibility)) {
-        visibility = target_visibility + invoker.visibility
-      }
       if (defined(invoker.testonly)) {
         testonly = invoker.testonly
       }
