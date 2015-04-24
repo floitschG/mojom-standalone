@@ -48,6 +48,8 @@ template("mojom") {
           defined(invoker.mojo_sdk_public_deps),
       "\"sources\" or \"deps\" must be defined for the $target_name template.")
 
+  cpp_sources_suffix = "cpp_sources"
+  cpp_sources_target_name = "${target_name}_${cpp_sources_suffix}"
   if (defined(invoker.sources)) {
     generator_root = rebase_path("mojo/public/tools/bindings", ".", mojo_root)
     generator_script = "$generator_root/mojom_bindings_generator.py"
@@ -172,7 +174,8 @@ template("mojom") {
     generator_target_name = target_name + "__generator"
     action_foreach(generator_target_name) {
       if (defined(invoker.visibility)) {
-        visibility = target_visibility + invoker.visibility
+        visibility = target_visibility + invoker.visibility +
+                     [ ":${cpp_sources_target_name}" ]
       }
       script = generator_script
       inputs = generator_sources
@@ -220,7 +223,7 @@ template("mojom") {
 
     public_deps = rebase_path([ "mojo/public/cpp/bindings" ], ".", mojo_root)
     if (defined(invoker.sources)) {
-      public_deps += [ ":${target_name}_cpp_sources" ]
+      public_deps += [ ":${cpp_sources_target_name}" ]
     }
     public_deps += rebased_mojo_sdk_public_deps
     if (defined(invoker.public_deps)) {
@@ -360,9 +363,12 @@ template("mojom") {
     # is so that mojo/public/cpp/bindings can depend on mojom interfaces without
     # circular dependencies. It means that the target is missing the dependency
     # on mojo/public/cpp/bindings. No external targets should depend directly on
-    # this target *except* mojo/public/cpp/bindings and other
-    # *_cpp_sources targets.
-    source_set("${target_name}_cpp_sources") {
+    # this target *except* mojo/public/cpp/bindings and other *_cpp_sources
+    # targets.
+    source_set(cpp_sources_target_name) {
+      if (defined(invoker.visibility)) {
+        visibility = target_visibility + invoker.visibility
+      }
       if (defined(invoker.testonly)) {
         testonly = invoker.testonly
       }
@@ -374,10 +380,10 @@ template("mojom") {
       ]
       foreach(d, all_deps) {
         # Resolve the name, so that a target //mojo/something becomes
-        # //mojo/something:something and we can append "_cpp_sources" to get
-        # the cpp dependency name.
+        # //mojo/something:something and we can append cpp_sources_suffix to
+        # get the cpp dependency name.
         full_name = get_label_info(d, "label_no_toolchain")
-        deps += [ "${full_name}_cpp_sources" ]
+        deps += [ "${full_name}_${cpp_sources_suffix}" ]
       }
     }
   }
