@@ -391,6 +391,22 @@ template("mojom") {
   if (is_android) {
     import("//build/config/android/rules.gni")
 
+    java_srcjar_target_name = target_name + "_java_sources"
+    action(java_srcjar_target_name) {
+      script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_root)
+      inputs = process_file_template(invoker.sources, generator_java_outputs)
+      output = "$target_gen_dir/$target_name.srcjar"
+      outputs = [
+        output,
+      ]
+      rebase_inputs = rebase_path(inputs, root_build_dir)
+      rebase_output = rebase_path(output, root_build_dir)
+      args = [
+        "--zip-inputs=$rebase_inputs",
+        "--output=$rebase_output",
+      ]
+    }
+
     java_target_name = target_name + "_java"
     android_library(java_target_name) {
       deps = rebase_path([
@@ -408,9 +424,7 @@ template("mojom") {
         deps += [ "${full_name}_java" ]
       }
 
-      if (defined(invoker.sources)) {
-        srcjars = process_file_template(invoker.sources, generator_java_outputs)
-      }
+      srcjar_deps = [ ":$java_srcjar_target_name" ]
     }
   }
 }
