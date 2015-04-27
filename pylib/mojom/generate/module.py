@@ -436,6 +436,18 @@ def IsFloatKind(kind):
   return kind.spec == FLOAT.spec
 
 
+def IsIntegralKind(kind):
+  return (kind.spec == BOOL.spec or
+          kind.spec == INT8.spec or
+          kind.spec == INT16.spec or
+          kind.spec == INT32.spec or
+          kind.spec == INT64.spec or
+          kind.spec == UINT8.spec or
+          kind.spec == UINT16.spec or
+          kind.spec == UINT32.spec or
+          kind.spec == UINT64.spec)
+
+
 def IsStringKind(kind):
   return kind.spec == STRING.spec or kind.spec == NULLABLE_STRING.spec
 

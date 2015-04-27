@@ -27,14 +27,20 @@
 namespace {{namespace}} {
 {%- endfor %}
 
-{#--- Constants #}
-{%  for constant in module.constants %}
-extern const {{constant.kind|cpp_pod_type}} {{constant.name}};
-{%- endfor %}
-
 {#--- Enums #}
 {%  for enum in enums %}
 {%    include "enum_declaration.tmpl" %}
+{%- endfor %}
+
+{#--- Constants #}
+{%- for constant in module.constants %}
+{#-   To be consistent with constants defined inside interfaces, only make
+      integral types compile-time constants. #}
+{%-   if constant.kind|is_integral_kind %}
+const {{constant.kind|cpp_pod_type}} {{constant.name}} = {{constant|constant_value}};
+{%-   else %}
+extern const {{constant.kind|cpp_pod_type}} {{constant.name}};
+{%-   endif %}
 {%- endfor %}
 
 {#--- Interface Forward Declarations -#}
