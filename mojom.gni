@@ -366,9 +366,6 @@ template("mojom") {
     # this target *except* mojo/public/cpp/bindings and other *_cpp_sources
     # targets.
     source_set(cpp_sources_target_name) {
-      if (defined(invoker.visibility)) {
-        visibility = target_visibility + invoker.visibility
-      }
       if (defined(invoker.testonly)) {
         testonly = invoker.testonly
       }
