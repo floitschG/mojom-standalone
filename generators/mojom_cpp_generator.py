@@ -123,7 +123,7 @@ def GetCppArrayArgWrapperType(kind):
 def GetCppResultWrapperType(kind):
   if mojom.IsEnumKind(kind):
     return GetNameForKind(kind)
-  if mojom.IsStructKind(kind):
+  if mojom.IsStructKind(kind) or mojom.IsUnionKind(kind):
     return "%sPtr" % GetNameForKind(kind)
   if mojom.IsArrayKind(kind):
     return "mojo::Array<%s>" % GetCppArrayArgWrapperType(kind.kind)
@@ -177,7 +177,7 @@ def GetCppWrapperType(kind):
   return _kind_to_cpp_type[kind]
 
 def GetCppConstWrapperType(kind):
-  if mojom.IsStructKind(kind):
+  if mojom.IsStructKind(kind) or mojom.IsUnionKind(kind):
     return "%sPtr" % GetNameForKind(kind)
   if mojom.IsArrayKind(kind):
     return "mojo::Array<%s>" % GetCppArrayArgWrapperType(kind.kind)
@@ -227,9 +227,15 @@ def GetCppFieldType(kind):
     return "mojo::internal::StringPointer"
   return _kind_to_cpp_type[kind]
 
+def GetCppUnionFieldType(kind):
+  if mojom.IsUnionKind(kind):
+    return ("mojo::internal::UnionPointer<%s_Data>" %
+        GetNameForKind(kind, internal=True))
+  return GetCppFieldType(kind)
+
 def GetUnionGetterReturnType(kind):
-  if (mojom.IsStructKind(kind) or mojom.IsArrayKind(kind) or
-      mojom.IsMapKind(kind)):
+  if (mojom.IsStructKind(kind) or mojom.IsUnionKind(kind) or
+      mojom.IsArrayKind(kind) or mojom.IsMapKind(kind)):
     return "%s&" % GetCppWrapperType(kind)
   return GetCppResultWrapperType(kind)
 
@@ -338,6 +344,7 @@ class Generator(generator.Generator):
     "constant_value": ConstantValue,
     "cpp_const_wrapper_type": GetCppConstWrapperType,
     "cpp_field_type": GetCppFieldType,
+    "cpp_union_field_type": GetCppUnionFieldType,
     "cpp_pod_type": GetCppPodType,
     "cpp_result_type": GetCppResultWrapperType,
     "cpp_type": GetCppType,

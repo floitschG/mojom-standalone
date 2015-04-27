@@ -27,7 +27,7 @@ if (!{{field.kind|cpp_wrapper_type}}::Data_::Validate(
 
 {%- macro validate_union_field(field, union) %}
 {%-   set field_expr = "(reinterpret_cast<const "
-    ~ field.kind|cpp_field_type
+    ~ field.kind|cpp_union_field_type
     ~ "*>(&object->data.f_"
     ~ field.name
     ~ "))" -%}
