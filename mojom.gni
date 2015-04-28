@@ -143,7 +143,7 @@ template("mojom") {
         [ "{{source_gen_dir}}/{{source_name_part}}.mojom.srcjar" ]
   }
   generator_dart_zip_output = "$target_out_dir/$target_name.dartzip"
-  generator_python_zip_output = "$target_out_dir/$target_name.pyzip"
+  generator_python_zip_output = "$target_out_dir/${target_name}_python.pyzip"
 
   rebased_mojo_sdk_public_deps = []
   if (defined(invoker.mojo_sdk_public_deps)) {
@@ -238,10 +238,7 @@ template("mojom") {
     if (defined(invoker.deps)) {
       deps += invoker.deps
     }
-    data_deps = [
-      ":${target_name}_python",
-      ":${target_name}_dart",
-    ]
+    data_deps = [ ":${target_name}_dart" ]
     if (defined(invoker.mojo_sdk_deps)) {
       foreach(sdk_dep, invoker.mojo_sdk_deps) {
         # Check that the SDK dep was not mistakenly given as an absolute path.
@@ -291,7 +288,7 @@ template("mojom") {
       dep_name = get_label_info(d, "name")
       dep_target_out_dir = get_label_info(d, "target_out_dir")
       deps += [ "${full_name}_python" ]
-      zip_inputs += [ "$dep_target_out_dir/$dep_name.pyzip" ]
+      zip_inputs += [ "$dep_target_out_dir/${dep_name}_python.pyzip" ]
     }
 
     output = generator_python_zip_output
