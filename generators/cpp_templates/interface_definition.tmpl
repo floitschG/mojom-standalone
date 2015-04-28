@@ -72,7 +72,7 @@ bool {{class_name}}_{{method.name}}_ForwardToCallback::Accept(
 {%- endfor %}
 
 {{proxy_name}}::{{proxy_name}}(mojo::MessageReceiverWithResponder* receiver)
-    : receiver_(receiver) {
+    : ControlMessageProxy(receiver) {
 }
 
 {#--- Proxy definitions #}
@@ -164,7 +164,8 @@ void {{class_name}}_{{method.name}}_ProxyToResponder::Run(
 {%- endfor %}
 
 {{class_name}}Stub::{{class_name}}Stub()
-    : sink_(nullptr) {
+    : sink_(nullptr),
+      control_message_handler_({{interface.name}}::Version_) {
 }
 
 {{class_name}}Stub::~{{interface.name}}Stub() {}
@@ -172,6 +173,8 @@ void {{class_name}}_{{method.name}}_ProxyToResponder::Run(
 {#--- Stub definition #}
 
 bool {{class_name}}Stub::Accept(mojo::Message* message) {
+  if (mojo::internal::ControlMessageHandler::IsControlMessage(message))
+    return control_message_handler_.Accept(message);
 {%- if interface.methods %}
   switch (message->header()->name) {
 {%-   for method in interface.methods %}
@@ -200,6 +203,8 @@ bool {{class_name}}Stub::Accept(mojo::Message* message) {
 
 bool {{class_name}}Stub::AcceptWithResponder(
     mojo::Message* message, mojo::MessageReceiverWithStatus* responder) {
+  if (mojo::internal::ControlMessageHandler::IsControlMessage(message))
+    return control_message_handler_.AcceptWithResponder(message, responder);
 {%- if interface.methods %}
   switch (message->header()->name) {
 {%-   for method in interface.methods %}
@@ -239,6 +244,13 @@ bool {{class_name}}Stub::AcceptWithResponder(
 
 bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
   assert(sink_);
+
+  if (mojo::internal::ControlMessageHandler::IsControlMessage(message)) {
+    if (!mojo::internal::ValidateControlRequest(message))
+      return false;
+    return sink_->Accept(message);
+  }
+
   switch (message->header()->name) {
 {%- for method in interface.methods %}
     case internal::k{{class_name}}_{{method.name}}_Name: {
@@ -274,6 +286,13 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
 
 bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
   assert(sink_);
+
+  if (mojo::internal::ControlMessageHandler::IsControlMessage(message)) {
+    if (!mojo::internal::ValidateControlResponse(message))
+      return false;
+    return sink_->Accept(message);
+  }
+
   if (!mojo::internal::ValidateMessageIsResponse(message))
     return false;
   switch (message->header()->name) {
