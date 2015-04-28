@@ -135,6 +135,34 @@ class MojoStructType(type):
     raise AttributeError('can\'t delete attribute')
 
 
+class InterfaceRequest(object):
+  """
+  An interface request allows to send a request for an interface to a remote
+  object and start using it immediately.
+  """
+
+  def __init__(self, handle):
+    self._handle = handle
+
+  def IsPending(self):
+    return self._handle.IsValid()
+
+  def PassMessagePipe(self):
+    result = self._handle
+    self._handle = None
+    return result
+
+  def Bind(self, impl):
+    type(impl).manager.Bind(impl, self.PassMessagePipe())
+
+
+class InterfaceProxy(object):
+  """
+  A proxy allows to access a remote interface through a message pipe.
+  """
+  pass
+
+
 def _StructInit(fields):
   def _Init(self, *args, **kwargs):
     if len(args) + len(kwargs) > len(fields):

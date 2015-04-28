@@ -90,34 +90,6 @@ class MojoInterfaceType(type):
     raise AttributeError('can\'t delete attribute')
 
 
-class InterfaceProxy(object):
-  """
-  A proxy allows to access a remote interface through a message pipe.
-  """
-  pass
-
-
-class InterfaceRequest(object):
-  """
-  An interface request allows to send a request for an interface to a remote
-  object and start using it immediately.
-  """
-
-  def __init__(self, handle):
-    self._handle = handle
-
-  def IsPending(self):
-    return self._handle.IsValid()
-
-  def PassMessagePipe(self):
-    result = self._handle
-    self._handle = None
-    return result
-
-  def Bind(self, impl):
-    type(impl).manager.Bind(impl, self.PassMessagePipe())
-
-
 class InterfaceManager(object):
   """
   Manager for an interface class. The manager contains the operation that allows
@@ -161,7 +133,7 @@ class InterfaceManager(object):
 
   def NewRequest(self):
     pipe = mojo_system.MessagePipe()
-    return (self.Proxy(pipe.handle0), InterfaceRequest(pipe.handle1))
+    return (self.Proxy(pipe.handle0), reflection.InterfaceRequest(pipe.handle1))
 
   def _InternalProxy(self, router, error_handler, version):
     if error_handler is None:
@@ -174,9 +146,10 @@ class InterfaceManager(object):
       }
       for method in self.methods:
         dictionary[method.name] = _ProxyMethodCall(method)
-      self._proxy_class = type('%sProxy' % self.name,
-                               (self.interface_class, InterfaceProxy),
-                               dictionary)
+      self._proxy_class = type(
+          '%sProxy' % self.name,
+          (self.interface_class, reflection.InterfaceProxy),
+          dictionary)
 
     proxy = self._proxy_class(router, error_handler)
     # Give an instance manager to the proxy to allow to close the connection.
