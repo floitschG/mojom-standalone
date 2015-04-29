@@ -30,13 +30,13 @@ class MessagingException(Exception):
 class MessageHeader(object):
   """The header of a mojo message."""
 
-  _SIMPLE_MESSAGE_VERSION = 2
+  _SIMPLE_MESSAGE_VERSION = 0
   _SIMPLE_MESSAGE_STRUCT = struct.Struct("<IIII")
 
   _REQUEST_ID_STRUCT = struct.Struct("<Q")
   _REQUEST_ID_OFFSET = _SIMPLE_MESSAGE_STRUCT.size
 
-  _MESSAGE_WITH_REQUEST_ID_VERSION = 3
+  _MESSAGE_WITH_REQUEST_ID_VERSION = 1
   _MESSAGE_WITH_REQUEST_ID_SIZE = (
       _SIMPLE_MESSAGE_STRUCT.size + _REQUEST_ID_STRUCT.size)
 
