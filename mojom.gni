@@ -173,10 +173,6 @@ template("mojom") {
   if (defined(invoker.sources)) {
     generator_target_name = target_name + "__generator"
     action_foreach(generator_target_name) {
-      if (defined(invoker.visibility)) {
-        visibility = target_visibility + invoker.visibility +
-                     [ ":${cpp_sources_target_name}" ]
-      }
       script = generator_script
       inputs = generator_sources
       sources = invoker.sources
@@ -371,6 +367,9 @@ template("mojom") {
           rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
       deps = [
         ":$generator_target_name",
+        rebase_path("mojo/public/interfaces/bindings:bindings__generator",
+                    ".",
+                    mojo_root),
       ]
       foreach(d, all_deps) {
         # Resolve the name, so that a target //mojo/something becomes
