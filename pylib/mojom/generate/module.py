@@ -278,6 +278,8 @@ class Map(ReferenceKind):
         raise Exception("Structs cannot be keys in maps.")
       if IsAnyHandleKind(key_kind):
         raise Exception("Handles cannot be keys in maps.")
+      if IsInterfaceKind(key_kind):
+        raise Exception("Interfaces cannot be keys in maps.")
       if IsArrayKind(key_kind):
         raise Exception("Arrays cannot be keys in maps.")
     else:
@@ -452,7 +454,7 @@ def IsStringKind(kind):
   return kind.spec == STRING.spec or kind.spec == NULLABLE_STRING.spec
 
 
-def IsHandleKind(kind):
+def IsGenericHandleKind(kind):
   return kind.spec == HANDLE.spec or kind.spec == NULLABLE_HANDLE.spec
 
 
@@ -514,27 +516,20 @@ def IsObjectKind(kind):
           IsMapKind(kind) or IsUnionKind(kind))
 
 
-def IsNonInterfaceHandleKind(kind):
-  return (IsHandleKind(kind) or
+# Please note that interface is not considered as handle kind, since it is an
+# aggregate type consisting of a handle and a version number.
+def IsAnyHandleKind(kind):
+  return (IsGenericHandleKind(kind) or
           IsDataPipeConsumerKind(kind) or
           IsDataPipeProducerKind(kind) or
           IsMessagePipeKind(kind) or
-          IsSharedBufferKind(kind))
-
-
-# TODO(yzshen): consider to make the handle-related type checks more clear:
-# - rename IsHandleKind to IsGenericHandleKind.
-# - change IsAnyHandleKind to exclude interface.
-# - remove IsNonInterfaceHandleKind.
-def IsAnyHandleKind(kind):
-  return (IsNonInterfaceHandleKind(kind) or
-          IsInterfaceKind(kind) or
+          IsSharedBufferKind(kind) or
           IsInterfaceRequestKind(kind))
 
 
 def IsMoveOnlyKind(kind):
   return (not IsStringKind(kind) and IsObjectKind(kind)) or \
-      IsAnyHandleKind(kind)
+      IsAnyHandleKind(kind) or IsInterfaceKind(kind)
 
 
 def IsCloneableKind(kind):
@@ -543,7 +538,7 @@ def IsCloneableKind(kind):
       # No need to examine the kind again.
       return False
     visited_kinds.add(kind)
-    if IsAnyHandleKind(kind):
+    if IsAnyHandleKind(kind) or IsInterfaceKind(kind):
       return True
     if IsArrayKind(kind):
       return ContainsHandles(kind.kind, visited_kinds)
