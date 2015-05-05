@@ -163,13 +163,6 @@ template("mojom") {
     }
   }
 
-  if (defined(invoker.visibility)) {
-    # Need to save this because the the target_name is overwritten inside the
-    # action to be that of the action itself. Only define this in the case the
-    # var is used to avoid unused var error.
-    target_visibility = [ ":$target_name" ]
-  }
-
   if (defined(invoker.sources)) {
     generator_target_name = target_name + "__generator"
     action_foreach(generator_target_name) {
