@@ -546,6 +546,10 @@ def IsCloneableKind(kind):
       for field in kind.fields:
         if ContainsHandles(field.kind, visited_kinds):
           return True
+    if IsMapKind(kind):
+      # No need to examine the key kind, only primitive kinds and non-nullable
+      # string are allowed to be key kinds.
+      return ContainsHandles(kind.value_kind, visited_kinds)
     return False
 
   return not ContainsHandles(kind, set())
