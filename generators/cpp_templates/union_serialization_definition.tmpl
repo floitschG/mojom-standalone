@@ -100,6 +100,8 @@ void Deserialize_(internal::{{union.name}}_Data* input,
         {{field.kind|cpp_wrapper_type}}* {{field.name}} =
             reinterpret_cast<{{field.kind|cpp_wrapper_type}}*>(&input->data.f_{{field.name}});
         result->set_{{field.name}}({{field.name}}->Pass());
+{%    elif field.kind|is_enum_kind %}
+        result->set_{{field.name}}(static_cast<{{field.kind|cpp_wrapper_type}}>(input->data.f_{{field.name}}));
 {%    else %}
         result->set_{{field.name}}(input->data.f_{{field.name}});
 {%-   endif %}
