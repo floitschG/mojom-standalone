@@ -117,9 +117,12 @@ class {{struct|name}} extends bindings.Struct {
       // Scan in reverse order to optimize for more recent versions.
       for (int i = kVersions.length - 1; i >= 0; --i) {
         if (mainDataHeader.version >= kVersions[i].version) {
-          if (mainDataHeader.size != kVersions[i].size)
-            throw new bindings.MojoCodecError(
-                'Header doesn\'t correspond to any known version.');
+          if (mainDataHeader.size == kVersions[i].size) {
+            // Found a match.
+            break;
+          }
+          throw new bindings.MojoCodecError(
+              'Header size doesn\'t correspond to known version size.');
         }
       }
     } else if (mainDataHeader.size < kVersions.last.size) {
