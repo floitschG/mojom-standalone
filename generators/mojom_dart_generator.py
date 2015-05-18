@@ -401,10 +401,13 @@ class Generator(generator.Generator):
   def GenerateLibModule(self, args):
     return self.GetParameters(args)
 
+
   def GenerateFiles(self, args):
     elements = self.module.namespace.split('.')
     elements.append("%s.dart" % self.module.name)
-    path = os.path.join("dart-gen", "mojom", *elements)
+    path = os.path.join("dart-pkg", "mojom/lib", *elements)
+    self.Write(self.GenerateLibModule(args), path)
+    path = os.path.join("dart-gen", "mojom/lib", *elements)
     self.Write(self.GenerateLibModule(args), path)
     link = self.MatchMojomFilePath("%s.dart" % self.module.name)
     if os.path.exists(os.path.join(self.output_dir, link)):
