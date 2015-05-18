@@ -67,9 +67,12 @@ encoder{{level}}.{{kind|encode_method(variable, offset, bit)}};
 {% endmacro %}
 
 {% macro decode(variable, kind, offset, bit, level=0) %}
-{% if kind|is_struct_kind or kind|is_pointer_array_kind or kind|is_map_kind %}
+{% if kind|is_struct_kind or
+      kind|is_pointer_array_kind or
+      kind|is_map_kind or
+      kind|is_union_kind %}
 org.chromium.mojo.bindings.Decoder decoder{{level+1}} = decoder{{level}}.readPointer({{offset}}, {{kind|is_nullable_kind|java_true_false}});
-{%   if kind|is_struct_kind %}
+{%   if kind|is_struct_kind or kind|is_union_kind %}
 {{variable}} = {{kind|java_type}}.decode(decoder{{level+1}});
 {%   else %}{# kind|is_pointer_array_kind or is_map_kind #}
 {%     if kind|is_nullable_kind %}

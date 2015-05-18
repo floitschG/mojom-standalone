@@ -91,7 +91,7 @@ if err := encoder.WritePointer(); err != nil {
 	return err
 }
 {% endif %}
-{% if kind|is_struct %}
+{% if kind|is_struct or kind|is_union %}
 if err := {{value}}.Encode(encoder); err != nil {
 	return err
 }
@@ -195,7 +195,7 @@ if err != nil {
 
 
 {% macro decodePointerValue(value, kind, level=0) %}
-{% if kind|is_struct %}
+{% if kind|is_struct or kind|is_union %}
 if err := {{value}}.Decode(decoder); err != nil {
 	return err
 }

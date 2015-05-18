@@ -60,6 +60,8 @@ _kind_infos = {
 _imports = {}
 
 def GetBitSize(kind):
+  if isinstance(kind, (mojom.Union)):
+    return 128
   if isinstance(kind, (mojom.Array, mojom.Map, mojom.Struct, mojom.Interface)):
     return 64
   if isinstance(kind, (mojom.InterfaceRequest)):
@@ -78,7 +80,7 @@ def GetGoType(kind, nullable = True):
 # Returns go type corresponding to provided kind. Ignores nullability of
 # top-level kind.
 def GetNonNullableGoType(kind):
-  if mojom.IsStructKind(kind):
+  if mojom.IsStructKind(kind) or mojom.IsUnionKind(kind):
     return '%s' % GetFullName(kind)
   if mojom.IsArrayKind(kind):
     if kind.length:
@@ -246,6 +248,7 @@ class Generator(generator.Generator):
     'is_nullable': mojom.IsNullableKind,
     'is_pointer': mojom.IsObjectKind,
     'is_struct': mojom.IsStructKind,
+    'is_union': mojom.IsUnionKind,
     'name': GetNameForElement,
     'tab_indent': lambda s, size = 1: ('\n' + '\t' * size).join(s.splitlines())
   }
