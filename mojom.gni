@@ -221,7 +221,7 @@ template("mojom") {
 
     deps = []
     if (defined(invoker.sources)) {
-      deps += [ ":$generator_target_name" ]
+      public_deps += [ ":$generator_target_name" ]
     }
     deps += rebased_mojo_sdk_deps
     if (defined(invoker.deps)) {
@@ -262,12 +262,13 @@ template("mojom") {
   action("${target_name}_python") {
     script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_root)
 
-    if (defined(invoker.sources)) {
-      inputs = process_file_template(invoker.sources, generator_python_outputs)
-    }
-
     deps = []
     zip_inputs = []
+
+    if (defined(invoker.sources)) {
+      inputs = process_file_template(invoker.sources, generator_python_outputs)
+      deps += [ ":$generator_target_name" ]
+    }
 
     foreach(d, all_deps) {
       # Resolve the name, so that a target //mojo/something becomes
@@ -304,12 +305,13 @@ template("mojom") {
   action("${target_name}_dart") {
     script = rebase_path("mojo/public/tools/gn/zip.py", ".", mojo_root)
 
-    if (defined(invoker.sources)) {
-      inputs = process_file_template(invoker.sources, generator_dart_outputs)
-    }
-
     deps = []
     zip_inputs = []
+
+    if (defined(invoker.sources)) {
+      inputs = process_file_template(invoker.sources, generator_dart_outputs)
+      deps += [ ":$generator_target_name" ]
+    }
 
     foreach(d, all_deps) {
       # Resolve the name, so that a target //mojo/something becomes
