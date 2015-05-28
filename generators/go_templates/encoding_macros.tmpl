@@ -28,6 +28,10 @@ if {{value}} == nil {
 if err := encoder.WritePointer(); err != nil {
 	return err
 }
+{% elif kind|is_union and not kind|is_nullable %}
+if {{value}} == nil {
+	return &bindings.ValidationError{bindings.UnexpectedNullUnion, "unexpected null union"}
+}
 {% endif %}
 {% if kind|is_struct or kind|is_union %}
 if err := {{value}}.Encode(encoder); err != nil {
