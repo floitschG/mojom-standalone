@@ -61,8 +61,6 @@ class PackedField(object):
   def GetAlignmentForKind(cls, kind):
     if isinstance(kind, mojom.Interface):
       return 4
-    if isinstance(kind, mojom.Union):
-      return 8
     return cls.GetSizeForKind(kind)
 
   def __init__(self, field, index, ordinal):
