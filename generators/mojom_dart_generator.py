@@ -136,6 +136,8 @@ def DartDefaultValue(field):
     return _kind_to_dart_default_value[field.kind]
   if mojom.IsStructKind(field.kind):
     return "null"
+  if mojom.IsUnionKind(field.kind):
+    return "null"
   if mojom.IsArrayKind(field.kind):
     return "null"
   if mojom.IsMapKind(field.kind):
@@ -149,8 +151,10 @@ def DartDefaultValue(field):
 def DartDeclType(kind):
   if kind in mojom.PRIMITIVES:
     return _kind_to_dart_decl_type[kind]
-  if mojom.IsStructKind(kind) or mojom.IsUnionKind(kind):
+  if mojom.IsStructKind(kind):
     return GetDartType(kind)
+  if mojom.IsUnionKind(kind):
+    return "%sWrapper" % GetDartType(kind)
   if mojom.IsArrayKind(kind):
     array_type = DartDeclType(kind.kind)
     return "List<" + array_type + ">"
@@ -197,8 +201,10 @@ def GetNameForElement(element):
     return GetNameForElement(element.kind)
   if isinstance(element, (mojom.Method,
                           mojom.Parameter,
-                          mojom.Field)):
+                          mojom.StructField)):
     return CamelCase(element.name)
+  if isinstance(element, mojom.UnionField):
+    return "f%s" % UpperCamelCase(element.name)
   if isinstance(element, mojom.EnumValue):
     return (GetNameForElement(element.enum) + '.' +
             ConstantStyle(element.name))
@@ -207,6 +213,12 @@ def GetNameForElement(element):
                           mojom.EnumField)):
     return ConstantStyle(element.name)
   raise Exception('Unexpected element: %s' % element)
+
+def GetUnionFieldTagName(element):
+  if not isinstance(element, mojom.UnionField):
+    raise Exception('Unexpected element: %s is not a union field.' % element)
+
+  return 'tag%s' % UpperCamelCase(element.name)
 
 def GetInterfaceResponseName(method):
   return UpperCamelCase(method.name + 'Response')
@@ -381,6 +393,7 @@ class Generator(generator.Generator):
     'dart_true_false': GetDartTrueFalse,
     'dart_type': DartDeclType,
     'name': GetNameForElement,
+    'tag_name': GetUnionFieldTagName,
     'interface_response_name': GetInterfaceResponseName,
   }
 
@@ -392,6 +405,7 @@ class Generator(generator.Generator):
       "enums": self.module.enums,
       "module": resolver.ResolveConstants(self.module, ExpressionToText),
       "structs": self.GetStructs() + self.GetStructsFromMethods(),
+      "unions": self.GetUnions(),
       "interfaces": self.GetInterfaces(),
       "imported_interfaces": self.GetImportedInterfaces(),
       "imported_from": self.ImportedFrom(),
