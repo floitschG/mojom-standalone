@@ -193,6 +193,9 @@ def ConstantStyle(name):
     components[0] = '_' + components[0]
   return '_'.join([x.upper() for x in components])
 
+def DotToUnderscore(name):
+    return name.replace('.', '_')
+
 def GetNameForElement(element):
   if (mojom.IsEnumKind(element) or mojom.IsInterfaceKind(element) or
       mojom.IsStructKind(element) or mojom.IsUnionKind(element)):
@@ -395,6 +398,7 @@ class Generator(generator.Generator):
     'name': GetNameForElement,
     'tag_name': GetUnionFieldTagName,
     'interface_response_name': GetInterfaceResponseName,
+    'dot_to_underscore': DotToUnderscore,
   }
 
   def GetParameters(self, args):
