@@ -1,0 +1,55 @@
+{%- macro union_def(union) %}
+function {{union.name}}(value) {
+  this.initDefault_();
+  this.initValue_(value);
+}
+
+{{tags(union)}}
+
+{{union.name}}.prototype.initDefault_ = function() {
+  this.$data = null;
+  this.$tag = {{union.name}}.Tags.$unknown;
+}
+
+{{union.name}}.prototype.initValue_ = function(value) {
+  if (value == undefined) {
+    return;
+  }
+
+  var keys = Object.keys(value);
+  if (keys.length == 0) {
+    return;
+  }
+
+  if (keys.length > 1) {
+    // TODO(azani): Handle this error.
+  }
+
+  this[keys[0]] = value[keys[0]];
+}
+
+{%-   for field in union.fields %}
+Object.defineProperty({{union.name}}.prototype, "{{field.name}}", {
+  get: function() {
+    if (this.$tag != {{union.name}}.Tags.{{field.name}}) {
+      // TODO(azani): Handle error.
+    }
+    return this.$data;
+  },
+
+  set: function(value) {
+    this.$tag = {{union.name}}.Tags.{{field.name}};
+    this.$data = value;
+  }
+});
+{%-   endfor %}
+{%- endmacro %}
+
+{%- macro tags(union) %}
+{{union.name}}.Tags = {
+  $unknown: 4294967295,
+{%-   for field in union.fields %}
+  {{field.name}}: {{field.ordinal}},
+{%-   endfor %}
+};
+{%- endmacro %}

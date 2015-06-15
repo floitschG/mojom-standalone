@@ -52,6 +52,8 @@ def JavaScriptDefaultValue(field):
     return _kind_to_javascript_default_value[field.kind]
   if mojom.IsStructKind(field.kind):
     return "null"
+  if mojom.IsUnionKind(field.kind):
+    return "null"
   if mojom.IsArrayKind(field.kind):
     return "null"
   if mojom.IsMapKind(field.kind):
@@ -61,6 +63,7 @@ def JavaScriptDefaultValue(field):
     return _kind_to_javascript_default_value[mojom.MSGPIPE]
   if mojom.IsEnumKind(field.kind):
     return "0"
+  raise Exception("No valid default: %s" % field)
 
 
 def JavaScriptPayloadSize(packed):
@@ -107,6 +110,10 @@ def CodecType(kind):
     pointer_type = "NullablePointerTo" if mojom.IsNullableKind(kind) \
         else "PointerTo"
     return "new codec.%s(%s)" % (pointer_type, JavaScriptType(kind))
+  if mojom.IsUnionKind(kind):
+    pointer_type = "NullableUnion" if mojom.IsNullableKind(kind) \
+        else "Union"
+    return "new codec.%s(%s)" % (pointer_type, JavaScriptType(kind))
   if mojom.IsArrayKind(kind):
     array_type = "NullableArrayOf" if mojom.IsNullableKind(kind) else "ArrayOf"
     array_length = "" if kind.length is None else ", %d" % kind.length
@@ -124,7 +131,8 @@ def CodecType(kind):
     key_type = ElementCodecType(kind.key_kind)
     value_type = ElementCodecType(kind.value_kind)
     return "new codec.%s(%s, %s)" % (map_type, key_type, value_type)
-  return kind
+  raise Exception("No codec type for %s" % kind)
+
 
 def ElementCodecType(kind):
   return "codec.PackedBool" if mojom.IsBoolKind(kind) else CodecType(kind)
@@ -143,14 +151,17 @@ def JavaScriptDecodeSnippet(kind):
     return "decodeArrayPointer(%s)" % CodecType(kind.kind)
   if mojom.IsInterfaceKind(kind):
     return "decodeStruct(%s)" % CodecType(kind)
+  if mojom.IsUnionKind(kind):
+    return "decodeUnion(%s)" % CodecType(kind)
   if mojom.IsInterfaceRequestKind(kind):
     return JavaScriptDecodeSnippet(mojom.MSGPIPE)
   if mojom.IsEnumKind(kind):
     return JavaScriptDecodeSnippet(mojom.INT32)
+  raise Exception("No decode snippet for %s" % kind)
 
 
 def JavaScriptEncodeSnippet(kind):
-  if kind in mojom.PRIMITIVES:
+  if kind in mojom.PRIMITIVES or mojom.IsUnionKind(kind):
     return "encodeStruct(%s, " % CodecType(kind)
   if mojom.IsStructKind(kind):
     return "encodeStructPointer(%s, " % JavaScriptType(kind)
@@ -167,6 +178,7 @@ def JavaScriptEncodeSnippet(kind):
     return JavaScriptEncodeSnippet(mojom.MSGPIPE)
   if mojom.IsEnumKind(kind):
     return JavaScriptEncodeSnippet(mojom.INT32)
+  raise Exception("No encode snippet for %s" % kind)
 
 
 def JavaScriptFieldOffset(packed_field):
@@ -340,6 +352,7 @@ class Generator(generator.Generator):
       "enums": self.module.enums,
       "module": self.module,
       "structs": self.GetStructs() + self.GetStructsFromMethods(),
+      "unions": self.GetUnions(),
       "interfaces": self.GetInterfaces(),
       "imported_interfaces": self.GetImportedInterfaces(),
     }
