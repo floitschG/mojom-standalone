@@ -373,10 +373,21 @@ def IsPointerArrayKind(kind):
   sub_kind = kind.kind
   return mojom.IsObjectKind(sub_kind)
 
+def ParseStringAttribute(attribute):
+  assert isinstance(attribute, basestring)
+  return attribute
+
+def GetPackage(module):
+  if module.attributes and 'DartPackage' in module.attributes:
+    return ParseStringAttribute(module.attributes['DartPackage'])
+  # Default package.
+  return 'mojom'
+
 def GetImportUri(module):
+  package = GetPackage(module);
   elements = module.namespace.split('.')
   elements.append("%s" % module.name)
-  return os.path.join("mojom", *elements)
+  return os.path.join(package, *elements)
 
 class Generator(generator.Generator):
 
