@@ -439,7 +439,7 @@ class Generator(generator.Generator):
     pkg_path = os.path.join("dart-pkg", package_name, "lib", *elements)
     self.Write(lib_module, pkg_path)
 
-    gen_path = os.path.join("dart-gen", "mojom/lib", *elements)
+    gen_path = os.path.join("dart-gen", package_name, "lib", *elements)
     full_gen_path = os.path.join(self.output_dir, gen_path)
     self.Write(lib_module, gen_path)
 
