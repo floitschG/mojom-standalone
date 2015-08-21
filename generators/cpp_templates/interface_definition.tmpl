@@ -26,9 +26,7 @@ p_{{param.name}}
 
 {%- macro build_message(struct, struct_display_name) -%}
   {{struct_macros.serialize(struct, struct_display_name, "in_%s", "params", "builder.buffer()")}}
-  mojo::Message message;
-  params->EncodePointersAndHandles(message.mutable_handles());
-  builder.Finish(&message);
+  params->EncodePointersAndHandles(builder.message()->mutable_handles());
 {%- endmacro %}
 
 {#--- Begin #}
@@ -105,10 +103,10 @@ void {{proxy_name}}::{{method.name}}(
 {%- if method.response_parameters != None %}
   mojo::MessageReceiver* responder =
       new {{class_name}}_{{method.name}}_ForwardToCallback(callback);
-  if (!receiver_->AcceptWithResponder(&message, responder))
+  if (!receiver_->AcceptWithResponder(builder.message(), responder))
     delete responder;
 {%- else %}
-  bool ok = receiver_->Accept(&message);
+  bool ok = receiver_->Accept(builder.message());
   // This return value may be ignored as !ok implies the Connector has
   // encountered an error, which will be visible through other means.
   MOJO_ALLOW_UNUSED_LOCAL(ok);
@@ -159,7 +157,7 @@ void {{class_name}}_{{method.name}}_ProxyToResponder::Run(
   mojo::internal::ResponseMessageBuilder builder(
       {{message_name}}, size, request_id_);
   {{build_message(response_params_struct, params_description)}}
-  bool ok = responder_->Accept(&message);
+  bool ok = responder_->Accept(builder.message());
   MOJO_ALLOW_UNUSED_LOCAL(ok);
   // TODO(darin): !ok returned here indicates a malformed message, and that may
   // be good reason to close the connection. However, we don't have a way to do
