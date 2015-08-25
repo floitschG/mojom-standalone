@@ -37,13 +37,11 @@ bool {{class_name}}::Validate(const void* data,
 {{ validation_macros.validate_union_field(field, union)|indent(8) }}
     }
 {%- endfor %}
-    default: {
-      ReportValidationError(
-          mojo::internal::VALIDATION_ERROR_UNKNOWN_UNION_TAG,
-          "unknown tag in {{union.name}}");
-      return false;
-    }
+    default:
+      // Unknown tags should not cause validation to fail.
+      break;
   }
+  return true;
 }
 
 void {{class_name}}::set_null() {
@@ -72,6 +70,10 @@ void {{class_name}}::EncodePointersAndHandles(
       return;
     }
 {%- endfor %}
+    case {{enum_name}}::__UNKNOWN__: {
+      MOJO_NOTREACHED() << "No sane way to serialize a union with an unknown tag.";
+      break;
+    }
   }
 }
 
@@ -92,5 +94,7 @@ void {{class_name}}::DecodePointersAndHandles(
       return;
     }
 {%- endfor %}
+    default:
+      return;
   }
 }

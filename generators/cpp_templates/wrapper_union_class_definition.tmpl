@@ -7,8 +7,7 @@
 
 {{union.name}}::{{union.name}}() {
   // TODO(azani): Implement default values here when/if we support them.
-  // TODO(azani): Set to UNKNOWN when unknown is implemented.
-  SetActive(static_cast<Tag>(0));
+  tag_ = Tag::__UNKNOWN__;
 }
 
 {{union.name}}::~{{union.name}}() {
@@ -30,6 +29,8 @@
 {%-   endif %}
       break;
 {%-   endfor %}
+    case Tag::__UNKNOWN__:
+      break;
   };
   return rv.Pass();
 }
@@ -50,6 +51,8 @@ bool {{union.name}}::Equals(const {{union.name}}& other) const {
       return mojo::internal::ValueTraits<{{field.kind|cpp_wrapper_type}}>::Equals(data_.{{field.name}}, other.data_.{{field.name}});
 {%-   endif %}
 {%- endfor %}
+    case Tag::__UNKNOWN__:
+      return false;
   };
 
   return false;
@@ -84,6 +87,10 @@ void {{union.name}}::set_{{field.name}}({{field.kind|cpp_const_wrapper_type}} {{
 }
 {%- endfor %}
 
+bool {{union.name}}::has_unknown_tag() const {
+  return tag_ == Tag::__UNKNOWN__;
+}
+
 void {{union.name}}::SwitchActive(Tag new_active) {
   if (new_active == tag_) {
     return;
@@ -103,6 +110,9 @@ void {{union.name}}::SetActive(Tag new_active) {
 {%-   endif %}
       break;
 {%- endfor %}
+    case Tag::__UNKNOWN__:
+      MOJO_NOTREACHED() << "Do not set a union tag to unknown.";
+      break;
   }
 
   tag_ = new_active;
@@ -118,5 +128,7 @@ void {{union.name}}::DestroyActive() {
 {%-   endif %}
       break;
 {%- endfor %}
+    default:
+      break;
   }
 }

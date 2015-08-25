@@ -25,6 +25,7 @@ class {{class_name}} {
 {%  for field in union.fields %}
     {{field.name|upper}},
 {%- endfor %}
+    __UNKNOWN__ = 0xFFFFFFFF,
   };
 
   // A note on layout:

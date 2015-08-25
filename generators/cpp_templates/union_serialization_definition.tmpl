@@ -82,6 +82,9 @@ void SerializeUnion_({{union.name}}Ptr input, mojo::internal::Buffer* buf,
         break;
       }
 {%- endfor %}
+      default:
+        MOJO_CHECK(false) << "No sane way to serialize a union with an unknown tag.";
+        break;
     }
   } else if (inlined) {
     result->set_null();
@@ -122,6 +125,10 @@ void Deserialize_(internal::{{union.name}}_Data* input,
         break;
       }
 {%- endfor %}
+      default:
+        MOJO_LOG(WARNING) << "Deserializing {{union.name}} with unknown tag!";
+        // No way to deserialize the data when we encounter an unknown tag.
+        break;
     }
     *output = result.Pass();
   } else {
