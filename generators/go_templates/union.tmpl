@@ -26,7 +26,7 @@ func Decode{{union|name(exported)}}(decoder *bindings.Decoder) ({{union|name(exp
 	}
 
 	if size == 0 {
-		decoder.SkipNullUnionValue()
+		decoder.SkipUnionValue()
 		return nil, nil
 	}
 
@@ -42,7 +42,18 @@ func Decode{{union|name(exported)}}(decoder *bindings.Decoder) ({{union|name(exp
 {%   endfor %}
 	}
 
-	return nil, fmt.Errorf("Unknown tag %d in {{union|name(exported)}}", tag);
+	decoder.SkipUnionValue()
+	return &{{union|name(exported)}}Unknown{tag: tag}, nil
+}
+
+{% set struct_name = union|name(exported) + 'Unknown' %}
+type {{struct_name}} struct { tag uint32 }
+func (u *{{struct_name}}) Tag() uint32 { return u.tag }
+func (u *{{struct_name}}) Interface() interface{} { return nil }
+func (u *{{struct_name}}) __Reflect(__{{union|name(exported)}}Reflect) {}
+
+func (u *{{struct_name}}) Encode(encoder *bindings.Encoder) error {
+	return fmt.Errorf("Trying to serialize an unknown {{union|name(exported)}}. There is no sane way to do that!");
 }
 
 {%   for field in union.fields %}
