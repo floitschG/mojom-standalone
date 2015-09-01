@@ -133,6 +133,10 @@ def CodecType(kind):
 
 
 def ElementCodecType(kind):
+  if mojom.IsUnionKind(kind):
+    wrapper_type = "NullableUnionWrapper" if mojom.IsNullableKind(kind) \
+        else "UnionWrapper"
+    return "new codec.%s(%s)" % (wrapper_type, JavaScriptType(kind))
   return "codec.PackedBool" if mojom.IsBoolKind(kind) else CodecType(kind)
 
 def JavaScriptDecodeSnippet(kind):

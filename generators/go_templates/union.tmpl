@@ -103,7 +103,7 @@ if pointer, err := decoder.ReadPointer(); err != nil || pointer == 0 {
 	{{value}} = nil
 	return nil
 {%     else %}
-	return &bindings.ValidationError{bindings.UnexpectedNullUnion, "unexpected null union"}
+	return &bindings.ValidationError{bindings.UnexpectedNullPointer, "unexpected null union pointer"}
 {%     endif %}
 }
 

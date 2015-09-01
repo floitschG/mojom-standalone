@@ -82,6 +82,12 @@ if (decoder{{level+1}} == null) {
 {%-   endif %}
 {%- elif kind|is_union_kind %}
   {{variable}} = {{kind|dart_type}}.decode(decoder{{level}}, {{offset}});
+{%-   if not kind|is_nullable_kind %}
+  if ({{variable}} == null) {
+    throw new bindings.MojoCodecError(
+      'Trying to decode null union for non-nullable {{kind|dart_type}}.');
+  }
+{%    endif %}
 {%- else %}
 {{variable}} = decoder{{level}}.{{kind|decode_method(offset, bit)}};
 {%- endif %}
