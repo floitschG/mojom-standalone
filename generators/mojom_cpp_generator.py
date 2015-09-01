@@ -67,6 +67,15 @@ def GetNameForKind(kind, internal = False):
   parts.append(kind.name)
   return "::".join(parts)
 
+def GetCppTypeForKind(kind):
+  # TODO(rudominer) After improvements to compiler front end have landed,
+  # revisit strategy used below for emitting a useful error message when an
+  # undefined identifier is referenced.
+  val =  _kind_to_cpp_type.get(kind)
+  if (val is not None):
+    return val
+  raise Exception("Unrecognized kind %s" % kind.spec)
+
 def GetCppType(kind):
   if mojom.IsArrayKind(kind):
     return "mojo::internal::Array_Data<%s>*" % GetCppType(kind.kind)
@@ -85,12 +94,12 @@ def GetCppType(kind):
     return "int32_t"
   if mojom.IsStringKind(kind):
     return "mojo::internal::String_Data*"
-  return _kind_to_cpp_type[kind]
+  return GetCppTypeForKind(kind)
 
 def GetCppPodType(kind):
   if mojom.IsStringKind(kind):
     return "char*"
-  return _kind_to_cpp_type[kind]
+  return GetCppTypeForKind(kind)
 
 def GetCppArrayArgWrapperType(kind):
   if mojom.IsEnumKind(kind):
@@ -118,7 +127,7 @@ def GetCppArrayArgWrapperType(kind):
     return "mojo::ScopedMessagePipeHandle"
   if mojom.IsSharedBufferKind(kind):
     return "mojo::ScopedSharedBufferHandle"
-  return _kind_to_cpp_type[kind]
+  return GetCppTypeForKind(kind)
 
 def GetCppResultWrapperType(kind):
   if mojom.IsEnumKind(kind):
@@ -146,13 +155,7 @@ def GetCppResultWrapperType(kind):
     return "mojo::ScopedMessagePipeHandle"
   if mojom.IsSharedBufferKind(kind):
     return "mojo::ScopedSharedBufferHandle"
-  # TODO(rudominer) After improvements to compiler front end have landed,
-  # revisit strategy used below for emitting a useful error message when an
-  # undefined identifier is referenced.
-  val =  _kind_to_cpp_type.get(kind)
-  if (val is not None):
-    return val
-  raise Exception("Unrecognized kind %s" % kind.spec)
+  return GetCppTypeForKind(kind)
 
 def GetCppWrapperType(kind):
   if mojom.IsEnumKind(kind):
@@ -180,7 +183,7 @@ def GetCppWrapperType(kind):
     return "mojo::ScopedMessagePipeHandle"
   if mojom.IsSharedBufferKind(kind):
     return "mojo::ScopedSharedBufferHandle"
-  return _kind_to_cpp_type[kind]
+  return GetCppTypeForKind(kind)
 
 def GetCppConstWrapperType(kind):
   if mojom.IsStructKind(kind) or mojom.IsUnionKind(kind):
@@ -210,7 +213,7 @@ def GetCppConstWrapperType(kind):
     return "mojo::ScopedSharedBufferHandle"
   if not kind in _kind_to_cpp_type:
     print "missing:", kind.spec
-  return _kind_to_cpp_type[kind]
+  return GetCppTypeForKind(kind)
 
 def GetCppFieldType(kind):
   if mojom.IsStructKind(kind):
@@ -231,7 +234,7 @@ def GetCppFieldType(kind):
     return GetNameForKind(kind)
   if mojom.IsStringKind(kind):
     return "mojo::internal::StringPointer"
-  return _kind_to_cpp_type[kind]
+  return GetCppTypeForKind(kind)
 
 def GetCppUnionFieldType(kind):
   if mojom.IsAnyHandleKind(kind):
