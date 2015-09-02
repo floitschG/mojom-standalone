@@ -116,13 +116,18 @@ def FixupExpression(module, value, scope, kind):
 def KindToData(kind):
   return kind.spec
 
+def MakeNullableKind(kind):
+  if isinstance(kind, mojom.ReferenceKind):
+    return kind.MakeNullableKind()
+  raise Exception('kind is not nullable: %s' % kind.spec)
+
 def KindFromData(kinds, data, scope):
   kind = LookupKind(kinds, data, scope)
   if kind:
     return kind
 
   if data.startswith('?'):
-    kind = KindFromData(kinds, data[1:], scope).MakeNullableKind()
+    kind = MakeNullableKind(KindFromData(kinds, data[1:], scope))
   elif data.startswith('a:'):
     kind = mojom.Array(KindFromData(kinds, data[2:], scope))
   elif data.startswith('a'):
