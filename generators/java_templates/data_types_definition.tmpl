@@ -120,6 +120,11 @@ if (decoder{{level+1}} == null) {
 {%   endif %}
 {% elif kind|is_union_kind %}
 {{variable}} = {{kind|java_type}}.decode(decoder{{level}}, {{offset}});
+{%   if not kind|is_nullable_kind %}
+if ({{variable}} == null) {
+    throw new org.chromium.mojo.bindings.DeserializationException("Trying to decode null union for a non-nullable type.");
+}
+{%   endif %}
 {% else %}
 {{variable}} = decoder{{level}}.{{kind|decode_method(offset, bit)}};
 {% endif %}
