@@ -409,6 +409,7 @@ class Generator(generator.Generator):
     'tag_name': GetUnionFieldTagName,
     'interface_response_name': GetInterfaceResponseName,
     'dot_to_underscore': DotToUnderscore,
+    'is_cloneable_kind': mojom.IsCloneableKind,
   }
 
   def GetParameters(self, args):
