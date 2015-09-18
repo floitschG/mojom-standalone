@@ -2,22 +2,19 @@
 
 {%- import "encoding_macros.tmpl" as encoding_macros %}
 
-
-
 {%- macro struct_def(struct) %}
+{#--- Enums #}
+{%- from "enum_definition.tmpl" import enum_def %}
+{%-  for enum in struct.enums %}
+{{enum_def(struct|name, enum)}}
+{%-  endfor %}
+
 class {{struct|name}} extends bindings.Struct {
   static const List<bindings.StructDataHeader> kVersions = const [
 {%- for version in struct.versions %}
     const bindings.StructDataHeader({{version.num_bytes}}, {{version.version}}){% if not loop.last %},{% endif %}
 {%- endfor %}
   ];
-
-{#--- Enums #}
-{%- from "enum_definition.tmpl" import enum_def %}
-{%-  for enum in struct.enums %}
-  {{enum_def("  static ", enum)}}
-{%-  endfor %}
-
 
 {#--- Constants #}
 {%-  for constant in struct.constants %}

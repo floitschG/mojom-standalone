@@ -5,6 +5,12 @@ const int k{{interface|name}}_{{method|name}}_name = {{method.ordinal}};
 const String {{interface|name}}Name =
       '{{namespace|replace(".","::")}}::{{interface.name}}';
 
+{#--- Interface Enums #}
+{%- from "enum_definition.tmpl" import enum_def -%}
+{%- for enum in interface.enums %}
+  {{ enum_def(interface|name, enum) }}
+{%-  endfor %}
+
 abstract class {{interface|name}} {
 {%- for method in interface.methods %}
 {%- if method.response_parameters == None %}
@@ -27,12 +33,6 @@ abstract class {{interface|name}} {
 {% for constant in interface.constants %}
   static const {{constant|name}} = {{constant.value|expression_to_text}};
 {%-   endfor %}
-
-{#--- Interface Enums #}
-{%- from "enum_definition.tmpl" import enum_def -%}
-{%- for enum in interface.enums %}
-  {{ enum_def("  static ", enum) }}
-{%-  endfor %}
 }
 
 

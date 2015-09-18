@@ -4,6 +4,8 @@
 {%- set sub_kind_size = "bindings.kPointerSize" %}
 {%-   if sub_kind|is_union_kind %}
 {%-     set sub_kind_size = "bindings.kUnionSize" %}
+{%-   elif sub_kind|is_enum_kind %}
+{%-     set sub_kind_size = "bindings.kEnumSize" %}
 {%-   endif %}
 {%-   if check_for_null %}
 if ({{variable}} == null) {
@@ -14,6 +16,8 @@ if ({{variable}} == null) {
 {%-   endif %}
 {%-   if sub_kind|is_union_kind %}
   var encoder{{level + 1}} = encoder{{level}}.encodeUnionArray({{variable}}.length, {{offset}}, {{kind|array_expected_length}});
+{%-   elif sub_kind|is_enum_kind %}
+  var encoder{{level + 1}} = encoder{{level}}.encodeEnumArray({{variable}}.length, {{offset}}, {{kind|array_expected_length}});
 {%-   else %}
   var encoder{{level + 1}} = encoder{{level}}.encodePointerArray({{variable}}.length, {{offset}}, {{kind|array_expected_length}});
 {%-   endif %}
@@ -69,6 +73,9 @@ if (decoder{{level+1}} == null) {
 {%-       if sub_kind|is_union_kind %}
 {%-         set sub_kind_size = "bindings.kUnionSize" %}
   var si{{level+1}} = decoder{{level+1}}.decodeDataHeaderForUnionArray({{kind|array_expected_length}});
+{%-       elif sub_kind|is_enum_kind %}
+{%-         set sub_kind_size = "bindings.kEnumSize" %}
+  var si{{level+1}} = decoder{{level+1}}.decodeDataHeaderForEnumArray({{kind|array_expected_length}});
 {%-       else %}
 {%-         set sub_kind_size = "bindings.kPointerSize" %}
   var si{{level+1}} = decoder{{level+1}}.decodeDataHeaderForPointerArray({{kind|array_expected_length}});
@@ -80,7 +87,7 @@ if (decoder{{level+1}} == null) {
 {%-     endif %}
 }
 {%-   endif %}
-{%- elif kind|is_union_kind %}
+{%- elif kind|is_union_kind or kind|is_enum_kind %}
   {{variable}} = {{kind|dart_type}}.decode(decoder{{level}}, {{offset}});
 {%-   if not kind|is_nullable_kind %}
   if ({{variable}} == null) {

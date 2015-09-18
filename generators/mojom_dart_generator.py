@@ -132,6 +132,9 @@ def DartDefaultValue(field):
     if mojom.IsStructKind(field.kind):
       assert field.default == "default"
       return "new %s()" % GetDartType(field.kind)
+    if mojom.IsEnumKind(field.kind):
+      return ("new %s(%s)" %
+          (GetDartType(field.kind), ExpressionToText(field.default)))
     return ExpressionToText(field.default)
   if field.kind in mojom.PRIMITIVES:
     return _kind_to_dart_default_value[field.kind]
@@ -147,7 +150,7 @@ def DartDefaultValue(field):
      mojom.IsInterfaceRequestKind(field.kind):
     return "null"
   if mojom.IsEnumKind(field.kind):
-    return "0"
+    return "null"
 
 def DartDeclType(kind):
   if kind in mojom.PRIMITIVES:
@@ -167,7 +170,7 @@ def DartDeclType(kind):
      mojom.IsInterfaceRequestKind(kind):
     return "Object"
   if mojom.IsEnumKind(kind):
-    return "int"
+    return GetDartType(kind)
 
 def NameToComponent(name):
   # insert '_' between anything and a Title name (e.g, HTTPEntry2FooBar ->
@@ -198,8 +201,13 @@ def DotToUnderscore(name):
     return name.replace('.', '_')
 
 def GetNameForElement(element):
-  if (mojom.IsEnumKind(element) or mojom.IsInterfaceKind(element) or
-      mojom.IsStructKind(element) or mojom.IsUnionKind(element)):
+  if (mojom.IsInterfaceKind(element) or mojom.IsStructKind(element) or
+      mojom.IsUnionKind(element)):
+    return UpperCamelCase(element.name)
+  if mojom.IsEnumKind(element):
+    if element.parent_kind:
+      return ("%s%s" % (UpperCamelCase(element.parent_kind.name),
+                        UpperCamelCase(element.name)))
     return UpperCamelCase(element.name)
   if mojom.IsInterfaceRequestKind(element):
     return GetNameForElement(element.kind)
@@ -290,8 +298,6 @@ def DecodeMethod(kind, offset, bit):
   def _DecodeMethodName(kind):
     if mojom.IsArrayKind(kind):
       return _DecodeMethodName(kind.kind) + 'Array'
-    if mojom.IsEnumKind(kind):
-      return _DecodeMethodName(mojom.INT32)
     if mojom.IsInterfaceRequestKind(kind):
       return 'decodeInterfaceRequest'
     if mojom.IsInterfaceKind(kind):
@@ -310,7 +316,7 @@ def EncodeMethod(kind, variable, offset, bit):
     if mojom.IsArrayKind(kind):
       return _EncodeMethodName(kind.kind) + 'Array'
     if mojom.IsEnumKind(kind):
-      return _EncodeMethodName(mojom.INT32)
+      return 'encodeEnum'
     if mojom.IsInterfaceRequestKind(kind):
       return 'encodeInterfaceRequest'
     if mojom.IsInterfaceKind(kind):
@@ -403,6 +409,7 @@ class Generator(generator.Generator):
     'is_pointer_array_kind': IsPointerArrayKind,
     'is_struct_kind': mojom.IsStructKind,
     'is_union_kind': mojom.IsUnionKind,
+    'is_enum_kind': mojom.IsEnumKind,
     'dart_true_false': GetDartTrueFalse,
     'dart_type': DartDeclType,
     'name': GetNameForElement,
