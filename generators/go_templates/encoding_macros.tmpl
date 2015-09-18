@@ -102,7 +102,7 @@ if pointer{{level}} == 0 {
 {%   endif %}
 {% elif kind|is_union %}
 var err error
-{%   set decoding_function = ('Decode'~ kind|name)|qualified(kind|package) %}
+{%   set decoding_function = ('Decode'~ kind.name)|qualified(kind|package) %}
 {{value}}, err = {{decoding_function}}(decoder)
 if err != nil {
 	return err
