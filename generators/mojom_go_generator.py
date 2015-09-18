@@ -132,6 +132,9 @@ def GetFullName(element, exported=True):
   return GetQualifiedName(
       element.name, GetPackageNameForElement(element), exported)
 
+def GetUnqualifiedNameForElement(element, exported=True):
+  return FormatName(element.name, exported)
+
 # Returns a name for nested elements like enum field or constant.
 # The returned name consists of camel-cased parts separated by '_'.
 def GetNameForNestedElement(element):
@@ -268,6 +271,7 @@ class Generator(generator.Generator):
     'is_union': mojom.IsUnionKind,
     'qualified': GetQualifiedName,
     'name': GetNameForElement,
+    'unqualified_name': GetUnqualifiedNameForElement,
     'package': GetPackageNameForElement,
     'tab_indent': lambda s, size = 1: ('\n' + '\t' * size).join(s.splitlines())
   }
