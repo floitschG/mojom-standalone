@@ -314,7 +314,8 @@ class Generator(generator.Generator):
         if method.response_parameters:
           all_structs.append(self._GetResponseStructFromMethod(method))
 
-    if len(all_structs) > 0 or len(self.module.interfaces) > 0:
+    if (len(all_structs) > 0 or len(self.module.interfaces) > 0
+        or len(self.module.unions) > 0):
       _imports['fmt'] = 'fmt'
       _imports['mojo/public/go/bindings'] = 'bindings'
     if len(self.module.interfaces) > 0:
