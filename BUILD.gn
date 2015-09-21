@@ -1,0 +1,48 @@
+# Copyright 2015 The Chromium Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+group("bindings") {
+  deps = [
+    ":invoke_code_gens",
+  ]
+}
+
+copy("invoke_code_gens") {
+  sources = [
+    "invoke_code_gens.py",
+    "pylib",
+  ]
+
+  outputs = [
+    "$root_out_dir/tools/bindings/{{source_file_part}}",
+  ]
+
+  deps = [
+    "../../python",
+    "../../interfaces/bindings",
+    "generators",
+    ":copy_jinja2",
+    ":copy_markupsafe",
+  ]
+}
+
+copy("copy_jinja2") {
+  sources = [
+    "../../third_party/jinja2",
+  ]
+
+  outputs = [
+    "$root_out_dir/tools/bindings/third_party/{{source_file_part}}",
+  ]
+}
+
+copy("copy_markupsafe") {
+  sources = [
+    "../../third_party/markupsafe",
+  ]
+
+  outputs = [
+    "$root_out_dir/tools/bindings/third_party/{{source_file_part}}",
+  ]
+}
