@@ -491,8 +491,7 @@ cdef class Handle(object):
     return (res, None)
 
   def BeginWriteData(self,
-                       min_size=None,
-                       flags=WRITE_DATA_FLAG_NONE):
+                     flags=WRITE_DATA_FLAG_NONE):
     """
     Begins a two-phase write to the data pipe producer.
 
@@ -508,9 +507,6 @@ cdef class Handle(object):
     """
     cdef void* out_buffer
     cdef uint32_t out_size = 0
-    if min_size:
-      flags |= c_core.MOJO_WRITE_DATA_FLAG_ALL_OR_NONE
-      out_size = min_size
     cdef c_core.MojoResult res = c_core.MojoBeginWriteData(self._mojo_handle,
                                                            &out_buffer,
                                                            &out_size,
@@ -565,7 +561,7 @@ cdef class Handle(object):
         flags|c_core.MOJO_READ_DATA_FLAG_QUERY)
     return (res, num_bytes)
 
-  def BeginReadData(self, min_size=None, flags=READ_DATA_FLAG_NONE):
+  def BeginReadData(self, flags=READ_DATA_FLAG_NONE):
     """
     Begins a two-phase read to the data pipe consumer.
 
@@ -581,9 +577,6 @@ cdef class Handle(object):
     """
     cdef const void* out_buffer
     cdef uint32_t out_size = 0
-    if min_size:
-      flags |= c_core.MOJO_READ_DATA_FLAG_ALL_OR_NONE
-      out_size = min_size
     cdef c_core.MojoResult res = c_core.MojoBeginReadData(self._mojo_handle,
                                                           &out_buffer,
                                                           &out_size,
