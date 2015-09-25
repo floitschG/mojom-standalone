@@ -8,7 +8,7 @@ const String {{interface|name}}Name =
 {#--- Interface Enums #}
 {%- from "enum_definition.tmpl" import enum_def -%}
 {%- for enum in interface.enums %}
-  {{ enum_def(interface|name, enum) }}
+  {{ enum_def(enum) }}
 {%-  endfor %}
 
 abstract class {{interface|name}} {

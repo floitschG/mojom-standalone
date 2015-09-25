@@ -1,25 +1,25 @@
-{%- macro enum_def(prefix, enum) -%}
-class {{prefix}}{{enum.name}} extends bindings.MojoEnum {
+{%- macro enum_def(enum) -%}
+class {{enum|name}} extends bindings.MojoEnum {
 {%- for field in enum.fields %}
-  static const {{field.name}} = const {{prefix}}{{enum.name}}._({{field.resolved_value}});
+  static const {{field.name}} = const {{enum|name}}._({{field.resolved_value}});
 {%- endfor %}
 
-  const {{prefix}}{{enum.name}}._(int v) : super(v);
+  const {{enum|name}}._(int v) : super(v);
 
-  static const Map<String, {{prefix}}{{enum.name}}> valuesMap = const {
+  static const Map<String, {{enum|name}}> valuesMap = const {
 {%- for field in enum.fields %}
     "{{field.name}}": {{field.name}},
 {%- endfor %}
   };
-  static const List<{{prefix}}{{enum.name}}> values = const [
+  static const List<{{enum|name}}> values = const [
 {%- for field in enum.fields %}
     {{field.name}},
 {%- endfor %}
   ];
 
-  static {{prefix}}{{enum.name}} valueOf(String name) => valuesMap[name];
+  static {{enum|name}} valueOf(String name) => valuesMap[name];
 
-  factory {{prefix}}{{enum.name}}(int v) {
+  factory {{enum|name}}(int v) {
     switch (v) {
 {%- for field in enum.fields %}
       case {{field.resolved_value}}:
@@ -30,12 +30,12 @@ class {{prefix}}{{enum.name}} extends bindings.MojoEnum {
     }
   }
 
-  static {{prefix}}{{enum.name}} decode(bindings.Decoder decoder0, int offset) {
+  static {{enum|name}} decode(bindings.Decoder decoder0, int offset) {
     int v = decoder0.decodeUint32(offset);
-    {{prefix}}{{enum.name}} result = new {{prefix}}{{enum.name}}(v);
+    {{enum|name}} result = new {{enum|name}}(v);
     if (result == null) {
       throw new bindings.MojoCodecError(
-          'Bad value $v for enum {{prefix}}{{enum.name}}.');
+          'Bad value $v for enum {{enum|name}}.');
     }
     return result;
   }
@@ -44,7 +44,7 @@ class {{prefix}}{{enum.name}} extends bindings.MojoEnum {
     switch(this) {
 {%- for field in enum.fields %}
       case {{field.name}}:
-        return '{{prefix}}{{enum.name}}.{{field.name}}';
+        return '{{enum|name}}.{{field.name}}';
 {%- endfor %}
     }
   }

@@ -6,7 +6,7 @@
 {#--- Enums #}
 {%- from "enum_definition.tmpl" import enum_def %}
 {%-  for enum in struct.enums %}
-{{enum_def(struct|name, enum)}}
+{{enum_def(enum)}}
 {%-  endfor %}
 
 class {{struct|name}} extends bindings.Struct {

@@ -6,7 +6,7 @@ const {{constant.name}} = {{constant.value|expression_to_text}};
 {#--- Enums #}
 {%- from "enum_definition.tmpl" import enum_def %}
 {%- for enum in enums %}
-{{ enum_def("", enum) }}
+{{ enum_def(enum) }}
 {%-  endfor %}
 
 {#--- Struct definitions #}
