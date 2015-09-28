@@ -8,7 +8,7 @@
 
 {%- macro alloc_params(struct) %}
 {%-   for param in struct.packed.packed_fields_in_ordinal_order %}
-  {{param.field.kind|cpp_result_type}} p_{{param.field.name}}{};
+  {{param.field.kind|cpp_result_type}} p_{{param.field.name}} {};
 {%-   endfor %}
   {{struct_macros.deserialize(struct, "params", "p_%s")}}
 {%- endmacro %}

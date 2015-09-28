@@ -14,6 +14,8 @@ size_t GetSerializedSize_(const {{union.name}}Ptr& input, bool inlined) {
     case {{union.name}}::Tag::{{field.name|upper}}:
 {%      if field.kind|is_union_kind %}
       size += GetSerializedSize_(*(input_acc.data()->{{field.name}}), false);
+{%      elif field.kind|is_struct_kind %}
+      size += GetSerializedSize_(*(input_acc.data()->{{field.name}}->get()));
 {%      else %}
       size += GetSerializedSize_(*(input_acc.data()->{{field.name}}));
 {%      endif %}
@@ -26,14 +28,14 @@ size_t GetSerializedSize_(const {{union.name}}Ptr& input, bool inlined) {
   return size;
 }
 
-void SerializeUnion_({{union.name}}Ptr input, mojo::internal::Buffer* buf,
+void SerializeUnion_({{union.name}}* input, mojo::internal::Buffer* buf,
                      internal::{{union.name}}_Data** output, bool inlined) {
   internal::{{union.name}}_Data* result = *output;
   if (input) {
     if (!inlined) {
       result = internal::{{union.name}}_Data::New(buf);
     }
-    mojo::internal::UnionAccessor<{{union.name}}> input_acc(input.get());
+    mojo::internal::UnionAccessor<{{union.name}}> input_acc(input);
     // TODO(azani): Handle unknown and objects.
     // Set the not-null flag.
     result->size = 16;
@@ -43,28 +45,28 @@ void SerializeUnion_({{union.name}}Ptr input, mojo::internal::Buffer* buf,
       case {{union.name}}::Tag::{{field.name|upper}}: {
 {%    if field.kind|is_object_kind %}
 {%      if field.kind|is_string_kind %}
-        Serialize_(
-            *(input_acc.data()->{{field.name}}),
+        SerializeString_(
+            *input_acc.data()->{{field.name}},
             buf, &result->data.f_{{field.name}}.ptr);
 {%      elif field.kind|is_struct_kind %}
         Serialize_(
-            mojo::internal::Forward(*(input_acc.data()->{{field.name}})),
+            input_acc.data()->{{field.name}}->get(),
             buf, &result->data.f_{{field.name}}.ptr);
 {%      elif field.kind|is_union_kind %}
         SerializeUnion_(
-            mojo::internal::Forward(*(input_acc.data()->{{field.name}})),
+            input_acc.data()->{{field.name}}->get(),
             buf, &result->data.f_{{field.name}}.ptr, false);
 {%      elif field.kind|is_array_kind %}
         const mojo::internal::ArrayValidateParams {{field.name}}_validate_params(
             {{field.kind|get_array_validate_params_ctor_args|indent(16)}});
         SerializeArray_(
-            mojo::internal::Forward(*(input_acc.data()->{{field.name}})),
+            input_acc.data()->{{field.name}},
             buf, &result->data.f_{{field.name}}.ptr, &{{field.name}}_validate_params);
 {%      elif field.kind|is_map_kind %}
         const mojo::internal::ArrayValidateParams {{field.name}}_validate_params(
             {{field.kind.value_kind|get_map_validate_params_ctor_args|indent(16)}});
         SerializeMap_(
-            mojo::internal::Forward(*(input_acc.data()->{{field.name}})),
+            input_acc.data()->{{field.name}},
             buf, &result->data.f_{{field.name}}.ptr, &{{field.name}}_validate_params);
 {%-     endif %}
 {%    elif field.kind|is_any_handle_kind %}
@@ -95,20 +97,28 @@ void SerializeUnion_({{union.name}}Ptr input, mojo::internal::Buffer* buf,
 }
 
 void Deserialize_(internal::{{union.name}}_Data* input,
-                  {{union.name}}Ptr* output) {
+                  {{union.name}}* output) {
   if (input && !input->is_null()) {
-    {{union.name}}Ptr result({{union.name}}::New());
-    mojo::internal::UnionAccessor<{{union.name}}> result_acc(result.get());
+    mojo::internal::UnionAccessor<{{union.name}}> result_acc(output);
     switch (input->tag) {
+{#- TODO(vardhan):  There is a lot of overlap with struct_macros.deserialize()
+    here, is it possible to merge? (currently looks very hairy) #}
 {%  for field in union.fields %}
       case {{union.name}}::Tag::{{field.name|upper}}: {
 {%    if field.kind|is_object_kind %}
         result_acc.SwitchActive({{union.name}}::Tag::{{field.name|upper}});
+{%      if field.kind|is_struct_kind or field.kind|is_union_kind %}
+        *result_acc.data()->{{field.name}} =
+            {{field.kind|get_name_for_kind}}::New();
+        Deserialize_(input->data.f_{{field.name}}.ptr,
+            result_acc.data()->{{field.name}}->get());
+{%      else %}
         Deserialize_(input->data.f_{{field.name}}.ptr, result_acc.data()->{{field.name}});
+{%      endif %}
 {%    elif field.kind|is_any_handle_kind %}
         {{field.kind|cpp_wrapper_type}}* {{field.name}} =
             reinterpret_cast<{{field.kind|cpp_wrapper_type}}*>(&input->data.f_{{field.name}});
-        result->set_{{field.name}}({{field.name}}->Pass());
+        output->set_{{field.name}}({{field.name}}->Pass());
 {%    elif field.kind|is_interface_kind %}
         {{field.kind|cpp_wrapper_type}} {{field.name}}_out;
         mojo::internal::Interface_Data* {{field.name}}_in =
@@ -116,11 +126,11 @@ void Deserialize_(internal::{{union.name}}_Data* input,
                 &input->data.f_{{field.name}});
         mojo::internal::InterfaceDataToPointer(
             {{field.name}}_in, &{{field.name}}_out);
-        result->set_{{field.name}}({{field.name}}_out.Pass());
+        output->set_{{field.name}}({{field.name}}_out.Pass());
 {%    elif field.kind|is_enum_kind %}
-        result->set_{{field.name}}(static_cast<{{field.kind|cpp_wrapper_type}}>(input->data.f_{{field.name}}));
+        output->set_{{field.name}}(static_cast<{{field.kind|cpp_wrapper_type}}>(input->data.f_{{field.name}}));
 {%    else %}
-        result->set_{{field.name}}(input->data.f_{{field.name}});
+        output->set_{{field.name}}(input->data.f_{{field.name}});
 {%-   endif %}
         break;
       }
@@ -130,8 +140,5 @@ void Deserialize_(internal::{{union.name}}_Data* input,
         // No way to deserialize the data when we encounter an unknown tag.
         break;
     }
-    *output = result.Pass();
-  } else {
-    output->reset();
   }
 }

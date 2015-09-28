@@ -1,12 +1,10 @@
 {%- import "struct_macros.tmpl" as struct_macros %}
-size_t GetSerializedSize_(const {{struct.name}}Ptr& input) {
-  if (!input)
-    return 0;
-  {{struct_macros.get_serialized_size(struct, "input->%s")}}
+size_t GetSerializedSize_(const {{struct.name}}& input) {
+  {{struct_macros.get_serialized_size(struct, "input.%s")}}
   return size;
 }
 
-void Serialize_({{struct.name}}Ptr input, mojo::internal::Buffer* buf,
+void Serialize_({{struct.name}}* input, mojo::internal::Buffer* buf,
                 internal::{{struct.name}}_Data** output) {
   if (input) {
     {{struct_macros.serialize(struct, struct.name ~ " struct", "input->%s", "result", "buf")|indent(2)}}
@@ -17,12 +15,8 @@ void Serialize_({{struct.name}}Ptr input, mojo::internal::Buffer* buf,
 }
 
 void Deserialize_(internal::{{struct.name}}_Data* input,
-                  {{struct.name}}Ptr* output) {
+                  {{struct.name}}* result) {
   if (input) {
-    {{struct.name}}Ptr result({{struct.name}}::New());
     {{struct_macros.deserialize(struct, "input", "result->%s")|indent(2)}}
-    *output = result.Pass();
-  } else {
-    output->reset();
   }
 }
