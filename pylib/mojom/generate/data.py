@@ -169,12 +169,21 @@ def KindFromImport(original_kind, imported_from):
   return kind
 
 def ImportFromData(module, data):
+  """Adds to the pool of available kinds in the current module, the list of
+  kinds provided by the imported module. Also creates a dict describing
+  the imported module."""
   import_module = data['module']
 
   import_item = {}
   import_item['module_name'] = import_module.name
   import_item['namespace'] = import_module.namespace
-  import_item['module'] = import_module
+
+  # Create a new module that contains only the needed values to prevent
+  # accidentally introducing dependencies on currently-unneeded data.
+  new_imported_module = mojom.Module(
+      import_module.name, import_module.namespace, import_module.attributes)
+  new_imported_module.path = import_module.path
+  import_item['module'] = new_imported_module
 
   # Copy the struct kinds from our imports into the current module.
   importable_kinds = (mojom.Struct, mojom.Union, mojom.Enum, mojom.Interface)
