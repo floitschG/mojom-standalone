@@ -71,7 +71,7 @@ void {{class_name}}::EncodePointersAndHandles(
     }
 {%- endfor %}
     case {{enum_name}}::__UNKNOWN__: {
-      MOJO_NOTREACHED() << "No sane way to serialize a union with an unknown tag.";
+      MOJO_DCHECK(false) << "No sane way to serialize a union with an unknown tag.";
       break;
     }
   }
