@@ -1,8 +1,10 @@
 {%- from "enum_macros.tmpl" import is_valid_enum_def %}
+{%- from "enum_macros.tmpl" import global_enum_operators_def %}
 
 {#--- Enums #}
 {%- for enum in struct.enums -%}
   {{is_valid_enum_def(enum, class_name=struct.name)}}
+  {{global_enum_operators_def(enum, class_name=struct.name)}}
 {%- endfor %}
 
 // static

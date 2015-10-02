@@ -4,12 +4,12 @@
   which case associated functions need to be static.
 ---#}
 {%- macro enum_decl(enum, is_static=false) %}
-enum {{enum.name}} : int32_t {
+enum class {{enum.name}} : int32_t {
 {%- for field in enum.fields %}
 {%-    if field.value %}
-  {{enum.name|to_all_caps}}_{{field.name}} = {{field.value|expression_to_text}},
+  {{field.name}} = {{field.value|expression_to_text}},
 {%-    else %}
-  {{enum.name|to_all_caps}}_{{field.name}},
+  {{field.name}},
 {%-    endif %}
 {%- endfor %}
 };
@@ -43,4 +43,26 @@ bool {{class_name}}::
   }
   return false;
 }
+{%- endmacro %}
+
+{%- macro global_enum_operators_decl(enum, class_name = '') %}
+{% if class_name != '' -%}
+std::ostream& operator<<(std::ostream& stream,
+                         const {{class_name}}::{{enum.name}}& val);
+{%- else -%}
+std::ostream& operator<<(std::ostream& stream, const {{enum.name}}& val);
+{%- endif -%}
+{%- endmacro %}
+
+{%- macro global_enum_operators_def(enum, class_name = '') %}
+{% if class_name != '' -%}
+std::ostream& operator<<(std::ostream& stream,
+                         const {{class_name}}::{{enum.name}}& val) {
+  return (stream << static_cast<int32_t>(val));
+}
+{%- else -%}
+std::ostream& operator<<(std::ostream& stream, const {{enum.name}}& val) {
+  return (stream << static_cast<int32_t>(val));
+}
+{%- endif -%}
 {%- endmacro %}

@@ -1,6 +1,7 @@
 {%- import "interface_macros.tmpl" as interface_macros %}
 {%- import "struct_macros.tmpl" as struct_macros %}
 {%- from "enum_macros.tmpl" import is_valid_enum_def %}
+{%- from "enum_macros.tmpl" import global_enum_operators_def %}
 
 {%- set class_name = interface.name %}
 {%- set proxy_name = interface.name ~ "Proxy" %}
@@ -44,7 +45,8 @@ MOJO_STATIC_CONST_MEMBER_DEFINITION const {{constant.kind|cpp_pod_type}} {{inter
 
 {#--- Enums #}
 {%- for enum in interface.enums %}
-  {{is_valid_enum_def(enum, class_name=interface.name)|indent(2)}}
+  {{is_valid_enum_def(enum, class_name=interface.name)}}
+  {{global_enum_operators_def(enum, class_name=interface.name)}}
 {%- endfor %}
 
 {#--- ForwardToCallback definition #}

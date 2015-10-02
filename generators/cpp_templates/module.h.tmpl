@@ -8,6 +8,7 @@
 #ifndef {{header_guard}}
 #define {{header_guard}}
 
+#include <iosfwd>
 #include <stdint.h>
 
 #include "mojo/public/cpp/bindings/array.h"
@@ -32,8 +33,10 @@ namespace {{namespace}} {
 
 {#--- Enums #}
 {% from "enum_macros.tmpl" import enum_decl -%}
+{% from "enum_macros.tmpl" import global_enum_operators_decl -%}
 {%  for enum in enums %}
   {{enum_decl(enum)}}
+  {{global_enum_operators_decl(enum)}}
 {%- endfor %}
 
 {#--- Constants #}

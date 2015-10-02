@@ -47,3 +47,9 @@ class {{interface.name}} {
   virtual void {{method.name}}({{interface_macros.declare_request_params("", method)}}) = 0;
 {%- endfor %}
 };
+
+{#--- Enum Operators #}
+{% from "enum_macros.tmpl" import global_enum_operators_decl -%}
+{%- for enum in interface.enums %}
+  {{global_enum_operators_decl(enum, class_name=interface.name)}}
+{%- endfor %}

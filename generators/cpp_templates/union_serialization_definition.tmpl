@@ -78,6 +78,9 @@ void SerializeUnion_({{union.name}}* input, mojo::internal::Buffer* buf,
                 &result->data.f_{{field.name}});
         mojo::internal::InterfacePointerToData(
             input_acc.data()->{{field.name}}->Pass(), {{field.name}});
+{%    elif field.kind|is_enum_kind %}
+        result->data.f_{{field.name}} = 
+          static_cast<int32_t>(input_acc.data()->{{field.name}});
 {%    else %}
         result->data.f_{{field.name}} = input_acc.data()->{{field.name}};
 {%-   endif %}

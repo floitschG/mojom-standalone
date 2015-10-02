@@ -53,6 +53,9 @@ def DefaultValue(field):
     return ExpressionToText(field.default, kind=field.kind)
   return ""
 
+def IsEnumToken(token):
+  return isinstance(token, mojom.EnumValue)
+
 def NamespaceToArray(namespace):
   return namespace.split(".") if namespace else []
 
@@ -265,12 +268,21 @@ def TranslateConstants(token, kind):
       name.extend(NamespaceToArray(token.namespace))
     if token.parent_kind:
       name.append(token.parent_kind.name)
-    if isinstance(token, mojom.EnumValue):
-      name.append(
-          "%s_%s" % (generator.CamelCaseToAllCaps(token.enum.name), token.name))
+    if IsEnumToken(token):
+      name.extend([token.enum.name, token.name])
     else:
       name.append(token.name)
-    return "::".join(name)
+
+    ret = "::".join(name)
+
+    # If we are translating an enum token for a non-enum (but defined) kind, or
+    # a non-enum token for an enum kind, we need an explicit cast.
+    # TODO(johngro) : should this be allowed at all?
+    if IsEnumToken(token) and kind is not None and not mojom.IsEnumKind(kind):
+      return "static_cast<int32_t>(%s)" % (ret, )
+    elif not IsEnumToken(token) and mojom.IsEnumKind(kind):
+      return "static_cast<%s>(%s)" % (GetNameForKind(kind), ret)
+    return ret
 
   if isinstance(token, mojom.BuiltinValue):
     if token.value == "double.INFINITY" or token.value == "float.INFINITY":
@@ -299,7 +311,13 @@ def TranslateConstants(token, kind):
     return "(-%d - 1) /* %s */" % (
         2**31 - 1, "Workaround for MSVC bug; see https://crbug.com/445618")
 
-  return "%s%s" % (token, _kind_to_cpp_literal_suffix.get(kind, ""))
+
+  # If we are translating a literal for an enum kind, we need an explicit cast.
+  # TODO(johngro) : should this be allowed at all?
+  ret = "%s%s" % (token, _kind_to_cpp_literal_suffix.get(kind, ""))
+  if mojom.IsEnumKind(kind):
+      return "static_cast<%s>(%s)" % (GetNameForKind(kind), ret)
+  return ret
 
 def ExpressionToText(value, kind=None):
   return TranslateConstants(value, kind)

@@ -95,6 +95,9 @@
       mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE,
       "invalid {{name}} in {{struct_display_name}}");
 {%-     endif %}
+{%-   elif kind|is_enum_kind %}
+  {{output}}->{{name}} =
+    static_cast<int32_t>({{input_field}});
 {%-   else %}
   {{output}}->{{name}} = {{input_field}};
 {%-   endif %}

@@ -44,3 +44,9 @@ class {{struct.name}} {
   {{type}} {{name}};
 {%- endfor %}
 };
+
+{#--- Enum Operators #}
+{% from "enum_macros.tmpl" import global_enum_operators_decl -%}
+{%- for enum in struct.enums %}
+  {{global_enum_operators_decl(enum, class_name=struct.name)}}
+{%- endfor %}
