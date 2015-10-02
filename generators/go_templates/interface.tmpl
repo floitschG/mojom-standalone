@@ -23,8 +23,8 @@
 
 
 
-{%- macro flags(response_parameters, is_response) -%}
-{%- if not response_parameters -%}
+{%- macro flags(method, is_response) -%}
+{%- if not method|has_response -%}
 	bindings.MessageNoFlag
 {%- elif is_response: -%}
 	bindings.MessageIsResponseFlag
@@ -102,7 +102,7 @@ func (p *{{interface|name}}_Proxy) Close_Proxy() {
 
 {% for method in interface.methods %}
 {{struct_macros.define(method.param_struct, False)}}
-{%-  if method.response_parameters %}
+{%-  if method|has_response %}
 {{struct_macros.define(method.response_param_struct, False)}}
 {%-   endif %}
 func (p *{{interface|name}}_Proxy) {{method|name}}{{declare_request_params(method)}} {
@@ -113,8 +113,8 @@ func (p *{{interface|name}}_Proxy) {{method|name}}{{declare_request_params(metho
 	}
 	header := bindings.MessageHeader{
 		Type: {{interface|name(False)}}_{{method|name}}_Name,
-		Flags: {{flags(method.response_parameters, False)}},
-{%   if method.response_parameters %}
+		Flags: {{flags(method, False)}},
+{%   if method|has_response %}
 		RequestId: p.ids.Count(),
 {%   endif %}
 	}
@@ -124,7 +124,7 @@ func (p *{{interface|name}}_Proxy) {{method|name}}{{declare_request_params(metho
 		p.Close_Proxy()
 		return
 	}
-{% if method.response_parameters %}
+{% if method|has_response %}
 	readResult := <-p.router.AcceptWithResponse(message)
 	if err = readResult.Error; err != nil {
 		p.Close_Proxy()
@@ -174,7 +174,7 @@ func (s *{{interface|name(False)}}_Stub) Accept(message *bindings.Message) (err 
 	switch message.Header.Type {
 {% for method in interface.methods %}
 	case {{interface|name(False)}}_{{method|name}}_Name:
-{%   if method.response_parameters %}
+{%   if method|has_response %}
 		if message.Header.Flags != bindings.MessageExpectsResponseFlag {
 {%   else %}
 		if message.Header.Flags != bindings.MessageNoFlag {
@@ -187,7 +187,7 @@ func (s *{{interface|name(False)}}_Stub) Accept(message *bindings.Message) (err 
 		if err := message.DecodePayload(&request); err != nil {
 			return err
 		}
-{%   if method.response_parameters %}
+{%   if method|has_response %}
 		var response {{method.response_param_struct|name(False)}}
 {%   endif %}
 {%   if method.response_parameters|is_none_or_empty %}
@@ -204,10 +204,10 @@ func (s *{{interface|name(False)}}_Stub) Accept(message *bindings.Message) (err 
 		if err != nil {
 			return
 		}
-{%   if method.response_parameters %}
+{%   if method|has_response %}
 		header := bindings.MessageHeader{
 			Type: {{interface|name(False)}}_{{method|name}}_Name,
-			Flags: {{flags(method.response_parameters, True)}},
+			Flags: {{flags(method, True)}},
 			RequestId: message.Header.RequestId,
 		}
 		message, err = bindings.EncodeMessage(header, &response)
