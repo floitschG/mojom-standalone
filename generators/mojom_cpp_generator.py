@@ -275,13 +275,19 @@ def TranslateConstants(token, kind):
 
     ret = "::".join(name)
 
-    # If we are translating an enum token for a non-enum (but defined) kind, or
-    # a non-enum token for an enum kind, we need an explicit cast.
-    # TODO(johngro) : should this be allowed at all?
+    # Explicitly disallow cases where we are translating an enum token for a
+    # non-enum (but defined) kind.
     if IsEnumToken(token) and kind is not None and not mojom.IsEnumKind(kind):
-      return "static_cast<int32_t>(%s)" % (ret, )
-    elif not IsEnumToken(token) and mojom.IsEnumKind(kind):
-      return "static_cast<%s>(%s)" % (GetNameForKind(kind), ret)
+      raise Exception("Assignment of enum value '%s' to type %s is disallowed" %
+                      (ret, _kind_to_cpp_type.get(kind, "<unknown>")))
+
+    # Explicitly disallow a non-enum token for an enum kind, we need an explicit
+    # cast.
+    if not IsEnumToken(token) and mojom.IsEnumKind(kind):
+      raise Exception(
+          "Assignment of non-enum value '%s' to enum-type %s is disallowed" %
+          (ret, GetNameForKind(kind)))
+
     return ret
 
   if isinstance(token, mojom.BuiltinValue):
@@ -312,11 +318,16 @@ def TranslateConstants(token, kind):
         2**31 - 1, "Workaround for MSVC bug; see https://crbug.com/445618")
 
 
-  # If we are translating a literal for an enum kind, we need an explicit cast.
-  # TODO(johngro) : should this be allowed at all?
   ret = "%s%s" % (token, _kind_to_cpp_literal_suffix.get(kind, ""))
+
+  # Literal tokens may not be assigned to enum variable.  By definition, the
+  # only valid tokens for the RHS of an assignment to an enum named values
+  # (specifically, members of the enumeration).
   if mojom.IsEnumKind(kind):
-      return "static_cast<%s>(%s)" % (GetNameForKind(kind), ret)
+    raise Exception(
+        "Assignment of literal '%s' to enum-type %s is disallowed" %
+        (ret, GetNameForKind(kind)))
+
   return ret
 
 def ExpressionToText(value, kind=None):
