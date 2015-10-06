@@ -159,9 +159,9 @@ void {{class_name}}::EncodePointersAndHandles(
 {%-   if pf.field.kind|is_union_kind %}
   {{pf.field.name}}.EncodePointersAndHandles(handles);
 {%-   elif pf.field.kind|is_object_kind %}
-  mojo::internal::Encode(&{{pf.field.name}}, handles);
+  mojo::internal::Encode(&this->{{pf.field.name}}, handles);
 {%-   elif pf.field.kind|is_any_handle_kind or pf.field.kind|is_interface_kind %}
-  mojo::internal::EncodeHandle(&{{pf.field.name}}, handles);
+  mojo::internal::EncodeHandle(&this->{{pf.field.name}}, handles);
 {%-   endif %}
 {%- endfor %}
 }
@@ -187,9 +187,9 @@ void {{class_name}}::DecodePointersAndHandles(
 {%-     if kind|is_union_kind %}
   {{name}}.DecodePointersAndHandles(handles);
 {%-     elif kind|is_object_kind %}
-  mojo::internal::Decode(&{{name}}, handles);
+  mojo::internal::Decode(&this->{{name}}, handles);
 {%-     else %}
-  mojo::internal::DecodeHandle(&{{name}}, handles);
+  mojo::internal::DecodeHandle(&this->{{name}}, handles);
 {%-     endif %}
 {%-   endif %}
 {%- endfor %}
