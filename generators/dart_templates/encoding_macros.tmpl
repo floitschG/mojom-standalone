@@ -44,6 +44,7 @@ encoder{{level}}.{{kind|encode_method(variable, offset, bit)}};
 {%- macro decode(variable, kind, offset, bit, level=0) %}
 {%- if kind|is_struct_kind or
        kind|is_pointer_array_kind or
+       kind|is_enum_array_kind or
        kind|is_map_kind %}
 var decoder{{level+1}} = decoder{{level}}.decodePointer({{offset}}, {{kind|is_nullable_kind|dart_true_false}});
 {%-   if kind|is_struct_kind %}

@@ -379,6 +379,9 @@ def IsPointerArrayKind(kind):
   sub_kind = kind.kind
   return mojom.IsObjectKind(sub_kind)
 
+def IsEnumArrayKind(kind):
+  return mojom.IsArrayKind(kind) and mojom.IsEnumKind(kind.kind)
+
 def ParseStringAttribute(attribute):
   assert isinstance(attribute, basestring)
   return attribute
@@ -407,6 +410,7 @@ class Generator(generator.Generator):
     'is_map_kind': mojom.IsMapKind,
     'is_nullable_kind': mojom.IsNullableKind,
     'is_pointer_array_kind': IsPointerArrayKind,
+    'is_enum_array_kind': IsEnumArrayKind,
     'is_struct_kind': mojom.IsStructKind,
     'is_union_kind': mojom.IsUnionKind,
     'is_enum_kind': mojom.IsEnumKind,
