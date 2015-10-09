@@ -1,3 +1,4 @@
+{% import 'struct_macros.tmpl' as struct_macros without context %} 
 size_t GetSerializedSize_(const {{union.name}}Ptr& input, bool inlined) {
   size_t size = 0U;
   if (!inlined) {
@@ -28,8 +29,11 @@ size_t GetSerializedSize_(const {{union.name}}Ptr& input, bool inlined) {
   return size;
 }
 
-void SerializeUnion_({{union.name}}* input, mojo::internal::Buffer* buf,
-                     internal::{{union.name}}_Data** output, bool inlined) {
+mojo::internal::ValidationError SerializeUnion_(
+    {{union.name}}* input,
+    mojo::internal::Buffer* buf,
+    internal::{{union.name}}_Data** output,
+    bool inlined) {
   internal::{{union.name}}_Data* result = *output;
   if (input) {
     if (!inlined) {
@@ -49,25 +53,36 @@ void SerializeUnion_({{union.name}}* input, mojo::internal::Buffer* buf,
             *input_acc.data()->{{field.name}},
             buf, &result->data.f_{{field.name}}.ptr);
 {%      elif field.kind|is_struct_kind %}
-        Serialize_(
-            input_acc.data()->{{field.name}}->get(),
-            buf, &result->data.f_{{field.name}}.ptr);
+          {{struct_macros.call_serialize_struct(
+              input = "input_acc.data()->%s->get()"|format(field.name),
+              buffer = "buf",
+              output = "&result->data.f_%s.ptr"|format(field.name),
+              should_return_errors = true)|indent(6)}}
 {%      elif field.kind|is_union_kind %}
-        SerializeUnion_(
-            input_acc.data()->{{field.name}}->get(),
-            buf, &result->data.f_{{field.name}}.ptr, false);
+          {{struct_macros.call_serialize_union(
+              input = "input_acc.data()->%s->get()"|format(field.name),
+              buffer = "buf",
+              output = "&result->data.f_%s.ptr"|format(field.name),
+              inlined = "false",
+              should_return_errors = true)|indent(6)}}
 {%      elif field.kind|is_array_kind %}
-        const mojo::internal::ArrayValidateParams {{field.name}}_validate_params(
-            {{field.kind|get_array_validate_params_ctor_args|indent(16)}});
-        SerializeArray_(
-            input_acc.data()->{{field.name}},
-            buf, &result->data.f_{{field.name}}.ptr, &{{field.name}}_validate_params);
+          {{struct_macros.call_serialize_array(
+              name = field.name,
+              kind = field.kind,
+              input = "input_acc.data()->%s"|format(field.name),
+              buffer = "buf",
+              output = "&result->data.f_%s.ptr"|format(field.name),
+              should_return_errors = true,
+              indent_size = 16)|indent(6)}}
 {%      elif field.kind|is_map_kind %}
-        const mojo::internal::ArrayValidateParams {{field.name}}_validate_params(
-            {{field.kind.value_kind|get_map_validate_params_ctor_args|indent(16)}});
-        SerializeMap_(
-            input_acc.data()->{{field.name}},
-            buf, &result->data.f_{{field.name}}.ptr, &{{field.name}}_validate_params);
+          {{struct_macros.call_serialize_map(
+              name = field.name,
+              kind = field.kind,
+              input = "input_acc.data()->%s"|format(field.name),
+              buffer = "buf",
+              output = "&result->data.f_%s.ptr"|format(field.name),
+              should_return_errors = true,
+              indent_size = 16)|indent(6)}}
 {%-     endif %}
 {%    elif field.kind|is_any_handle_kind %}
         result->data.f_{{field.name}} =
@@ -88,6 +103,7 @@ void SerializeUnion_({{union.name}}* input, mojo::internal::Buffer* buf,
       }
 {%- endfor %}
       default:
+        // TODO(vardhan): Should this return an error code instead?
         MOJO_CHECK(false) << "No sane way to serialize a union with an unknown tag.";
         break;
     }
@@ -97,6 +113,7 @@ void SerializeUnion_({{union.name}}* input, mojo::internal::Buffer* buf,
     result = nullptr;
   }
   *output = result;
+  return mojo::internal::VALIDATION_ERROR_NONE;
 }
 
 void Deserialize_(internal::{{union.name}}_Data* input,

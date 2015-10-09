@@ -26,7 +26,7 @@ p_{{param.name}}
 {%- endmacro %}
 
 {%- macro build_message(struct, struct_display_name) -%}
-  {{struct_macros.serialize(struct, struct_display_name, "in_%s", "params", "builder.buffer()")}}
+  {{struct_macros.serialize(struct, struct_display_name, "in_%s", "params", "builder.buffer()", false)}}
   params->EncodePointersAndHandles(builder.message()->mutable_handles());
 {%- endmacro %}
 

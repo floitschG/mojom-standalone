@@ -4,14 +4,17 @@ size_t GetSerializedSize_(const {{struct.name}}& input) {
   return size;
 }
 
-void Serialize_({{struct.name}}* input, mojo::internal::Buffer* buf,
-                internal::{{struct.name}}_Data** output) {
+mojo::internal::ValidationError Serialize_(
+    {{struct.name}}* input,
+    mojo::internal::Buffer* buf,
+    internal::{{struct.name}}_Data** output) {
   if (input) {
-    {{struct_macros.serialize(struct, struct.name ~ " struct", "input->%s", "result", "buf")|indent(2)}}
+    {{struct_macros.serialize(struct, struct.name ~ " struct", "input->%s", "result", "buf", true)|indent(2)}}
     *output = result;
   } else {
     *output = nullptr;
   }
+  return mojo::internal::VALIDATION_ERROR_NONE;
 }
 
 void Deserialize_(internal::{{struct.name}}_Data* input,

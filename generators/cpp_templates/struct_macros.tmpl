@@ -26,6 +26,88 @@
 {%-   endfor %}
 {%- endmacro -%}
 
+{# A private macro that prints the C++ log-and-report serialization errors
+   macro, and conditionally returns if |should_return_errors| #}
+{%- macro _validation_check_macro(condition, error_code, error_msg, should_return_errors=false) -%}
+  if ({{condition}}) {
+    MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING({{error_code}}, "{{error_msg}}");
+  {%- if should_return_errors %}
+    return {{error_code}};
+  {%- endif %}
+  }
+{%- endmacro -%}
+
+{# The following 4 macros call |SerializeArray_|, |SerializeMap_|,
+   |SerializeUnion_| and |Serialize_| respectively.  If |should_return_error|
+   is true, these macros do the extra work of propagating non-successful error
+   codes. #} 
+{%- macro call_serialize_array(name, kind, input, buffer, output,
+                               should_return_errors, indent_size) -%}
+  {
+    const mojo::internal::ArrayValidateParams {{name}}_validate_params(
+      {{kind|get_array_validate_params_ctor_args|indent(indent_size)}});
+{%-       if should_return_errors -%}
+    auto retval =
+{%-       endif -%}
+    mojo::SerializeArray_({{input}}, {{buffer}}, {{output}},
+                          &{{name}}_validate_params);
+{%-       if should_return_errors %}
+    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+      return retval;
+{%-       endif %}
+  }
+{%- endmacro -%}
+
+{%- macro call_serialize_map(name, kind, input, buffer, output,
+                             should_return_errors, indent_size) -%}
+  {
+    const mojo::internal::ArrayValidateParams {{name}}_validate_params(
+        {{kind.value_kind|get_map_validate_params_ctor_args|indent(indent_size)}});
+{%- if should_return_errors -%}
+    auto retval =
+{%- endif -%}
+    mojo::SerializeMap_(
+        {{input}}, {{buffer}}, {{output}},
+        &{{name}}_validate_params);
+{%- if should_return_errors %}
+    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+      return retval;
+{%- endif %}
+  }
+{%- endmacro -%}
+
+{%- macro call_serialize_union(input, buffer, output, inlined,
+                               should_return_errors) -%}  
+  {
+{%- if should_return_errors -%}
+    auto retval =
+{%- endif -%}
+    SerializeUnion_({{input}},
+                    {{buffer}},
+                    {{output}},
+                    {{inlined}});
+{%- if should_return_errors %}
+    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+      return retval;
+{%- endif %}
+  }
+{%- endmacro -%}
+
+{%- macro call_serialize_struct(input, buffer, output, should_return_errors) -%}  
+  {
+{%- if should_return_errors -%}
+    auto retval =
+{%- endif -%}
+    Serialize_({{input}},
+               {{buffer}},
+               {{output}});
+{%- if should_return_errors %}
+    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+      return retval;
+{%- endif %}
+  }
+{%- endmacro -%}
+
 {#  Serializes the specified struct.
     |struct| is the struct definition.
     |struct_display_name| is the display name for the struct that can be showed
@@ -35,12 +117,18 @@
     substituted with struct field names to refer to the input fields.
     |output| is the name of the output struct instance.
     |buffer| is the name of the Buffer instance used.
+    |should_return_errors| is true if validation errors need to be return'd. 
+    This is needed when serializing interface parameters, where you cannot
+    return.
+
     This macro is expanded to do serialization for both:
     - user-defined structs: the input is an instance of the corresponding struct
       wrapper class.
     - method parameters/response parameters: the input is a list of
-      arguments. #}
-{%- macro serialize(struct, struct_display_name, input_field_pattern, output, buffer) -%}
+      arguments.
+    This macro is expanded within the C++ struct serialization methods #}
+{%- macro serialize(struct, struct_display_name, input_field_pattern,
+                    output, buffer, should_return_errors=false) -%}
   internal::{{struct.name}}_Data* {{output}} =
       internal::{{struct.name}}_Data::New({{buffer}});
 {%- for pf in struct.packed.packed_fields_in_ordinal_order %}
@@ -49,33 +137,47 @@
 {%-   set kind = pf.field.kind %}
 {%-   if kind|is_object_kind %}
 {%-     if kind|is_array_kind %}
-  const mojo::internal::ArrayValidateParams {{name}}_validate_params(
-      {{kind|get_array_validate_params_ctor_args|indent(10)}});
-  mojo::SerializeArray_(&{{input_field}}, {{buffer}},
-      &{{output}}->{{name}}.ptr, &{{name}}_validate_params);
+  {{call_serialize_array(name = name,
+                         kind = kind,
+                         input = '&' ~ input_field,
+                         buffer = buffer,
+                         output = "&%s->%s.ptr"|format(output,name),
+                         should_return_errors = should_return_errors,
+                         indent_size = 10)}}
 {%-     elif kind|is_map_kind %}
-  const mojo::internal::ArrayValidateParams {{name}}_validate_params(
-      {{kind.value_kind|get_map_validate_params_ctor_args|indent(10)}});
-  mojo::SerializeMap_(
-      &{{input_field}}, {{buffer}}, &{{output}}->{{name}}.ptr,
-      &{{name}}_validate_params);
+  {{call_serialize_map(name = name,
+                       kind = kind,
+                       input = '&' ~ input_field,
+                       buffer = buffer,
+                       output = '&%s->%s.ptr'|format(output,name),
+                       should_return_errors = should_return_errors,
+                       indent_size = 10)}}
 {%-     elif kind|is_union_kind %}
   internal::{{kind.name}}_Data* {{name}}_ptr = &{{output}}->{{name}};
-  SerializeUnion_({{input_field}}.get(), {{buffer}}, &{{name}}_ptr, true);
+  {{call_serialize_union(input = input_field ~ ".get()",
+                         buffer = buffer,
+                         output = "&%s_ptr"|format(name),
+                         inlined = "true",
+                         should_return_errors = should_return_errors)}}
 {%-     elif kind|is_string_kind %}
   SerializeString_({{input_field}}, {{buffer}}, &{{output}}->{{name}}.ptr);
 {%-     else %}
-  Serialize_({{input_field}}.get(), {{buffer}}, &{{output}}->{{name}}.ptr);
+  {{call_serialize_struct(input = input_field ~ ".get()",
+                          buffer = buffer,
+                          output = "&%s->%s.ptr"|format(output,name),
+                          should_return_errors = should_return_errors)}}
 {%-     endif %}
 {%-     if not kind|is_nullable_kind %}
-  MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
 {%-       if kind|is_union_kind %}
-      {{output}}->{{name}}.is_null(),
+{%-         set condition = "%s->%s.is_null()" | format(output, name) %}
 {%-       else %}
-      !{{output}}->{{name}}.ptr,
+{%-         set condition = "!%s->%s.ptr" | format(output,name) %}
 {%-       endif %}
-      mojo::internal::VALIDATION_ERROR_UNEXPECTED_NULL_POINTER,
-      "null {{name}} in {{struct_display_name}}");
+  {{_validation_check_macro(
+    condition = condition,
+    error_code = "mojo::internal::VALIDATION_ERROR_UNEXPECTED_NULL_POINTER",
+    error_msg = "null %s in %s" | format(name, struct_display_name),
+    should_return_errors = should_return_errors)}}
 {%-     endif %}
 {%-   elif kind|is_any_handle_kind or kind|is_interface_kind %}
 {%-     if kind|is_interface_kind %}
@@ -86,14 +188,16 @@
   {{output}}->{{name}} = {{input_field}}.release();
 {%-     endif %}
 {%-     if not kind|is_nullable_kind %}
-  MOJO_INTERNAL_DLOG_SERIALIZATION_WARNING(
 {%-       if kind|is_interface_kind %}
-      !{{output}}->{{name}}.handle.is_valid(),
+{%-         set condition = "!%s->%s.handle.is_valid()" | format(output, name) %}
 {%-       else %}
-      !{{output}}->{{name}}.is_valid(),
+{%-         set condition = "!%s->%s.is_valid()" | format(output,name) %}
 {%-       endif %}
-      mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE,
-      "invalid {{name}} in {{struct_display_name}}");
+  {{_validation_check_macro(
+    condition = condition,
+    error_code = "mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE",
+    error_msg = "invalid %s in %s" | format(name, struct_display_name),
+    should_return_errors = should_return_errors)}}
 {%-     endif %}
 {%-   elif kind|is_enum_kind %}
   {{output}}->{{name}} =
