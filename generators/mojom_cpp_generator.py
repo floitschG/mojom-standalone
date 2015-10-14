@@ -107,15 +107,14 @@ def GetCppPodType(kind):
 def GetCppArrayArgWrapperType(kind):
   if mojom.IsEnumKind(kind):
     return GetNameForKind(kind)
-  if mojom.IsStructKind(kind) or mojom.IsUnionKind(kind):
+  if (mojom.IsStructKind(kind) or mojom.IsUnionKind(kind) or
+      mojom.IsInterfaceKind(kind)):
     return "%sPtr" % GetNameForKind(kind)
   if mojom.IsArrayKind(kind):
     return "mojo::Array<%s> " % GetCppArrayArgWrapperType(kind.kind)
   if mojom.IsMapKind(kind):
     return "mojo::Map<%s, %s> " % (GetCppArrayArgWrapperType(kind.key_kind),
                                    GetCppArrayArgWrapperType(kind.value_kind))
-  if mojom.IsInterfaceKind(kind):
-    raise Exception("Arrays of interfaces not yet supported!")
   if mojom.IsInterfaceRequestKind(kind):
     raise Exception("Arrays of interface requests not yet supported!")
   if mojom.IsStringKind(kind):
