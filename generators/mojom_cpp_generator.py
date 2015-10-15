@@ -116,7 +116,7 @@ def GetCppArrayArgWrapperType(kind):
     return "mojo::Map<%s, %s> " % (GetCppArrayArgWrapperType(kind.key_kind),
                                    GetCppArrayArgWrapperType(kind.value_kind))
   if mojom.IsInterfaceRequestKind(kind):
-    raise Exception("Arrays of interface requests not yet supported!")
+    return "mojo::InterfaceRequest<%s>" % GetNameForKind(kind.kind)
   if mojom.IsStringKind(kind):
     return "mojo::String"
   if mojom.IsGenericHandleKind(kind):
@@ -172,7 +172,7 @@ def GetCppWrapperType(kind):
   if mojom.IsInterfaceKind(kind):
     return "%sPtr" % GetNameForKind(kind)
   if mojom.IsInterfaceRequestKind(kind):
-    raise Exception("InterfaceRequest fields not supported!")
+    return "mojo::InterfaceRequest<%s>" % GetNameForKind(kind.kind)
   if mojom.IsStringKind(kind):
     return "mojo::String"
   if mojom.IsGenericHandleKind(kind):
