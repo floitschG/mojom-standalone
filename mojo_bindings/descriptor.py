@@ -611,7 +611,7 @@ class MapType(SerializableType):
 
   def Serialize(self, value, data_offset, data, handle_offset):
     s = None
-    if value:
+    if value is not None:
       keys, values = [], []
       for key, value in value.iteritems():
         keys.append(key)
