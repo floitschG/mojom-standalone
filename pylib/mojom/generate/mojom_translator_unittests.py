@@ -104,17 +104,19 @@ class TestTranslateFile(unittest.TestCase):
         decl_data=mojom_types_mojom.DeclarationData(short_name='AConst'),
         type=mojom_types_mojom.Type(
           simple_type=mojom_types_mojom.SimpleType.INT64),
-        value=mojom_types_mojom.ConstantOccurrence(
-          value=mojom_types_mojom.ConstantValue(
+        value=mojom_types_mojom.Value(
+          literal_value=mojom_types_mojom.LiteralValue(
             int64_value=30)))
-    graph.resolved_constants = {'const_key': mojom_const}
+    user_defined_value = mojom_types_mojom.UserDefinedValue()
+    user_defined_value.declared_constant = mojom_const
+    graph.resolved_values = {'value_key': user_defined_value}
 
     mojom_file.declared_mojom_objects = mojom_files_mojom.KeysByType(
         interfaces=['interface_key'],
         structs=['struct_key'],
         unions=['union_key'],
         top_level_enums=['enum_key'],
-        top_level_constants=['const_key']
+        top_level_constants=['value_key']
         )
 
     mod = mojom_translator.FileTranslator(graph, file_name).Translate()
@@ -159,8 +161,9 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
             short_name='field02'),
           type=mojom_types_mojom.Type(
             simple_type=mojom_types_mojom.SimpleType.DOUBLE),
-          default_value=mojom_types_mojom.ConstantOccurrence(
-            value=mojom_types_mojom.ConstantValue(double_value=15))),
+          default_value=mojom_types_mojom.DefaultFieldValue(
+            value=mojom_types_mojom.Value(
+              literal_value=mojom_types_mojom.LiteralValue(double_value=15)))),
         ]
     mojom_struct.decl_data.source_file_info = mojom_types_mojom.SourceFileInfo(
         file_name=mojom_file.file_name)
@@ -192,8 +195,8 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         short_name='foo')
     mojom_const.type = mojom_types_mojom.Type(
         simple_type=mojom_types_mojom.SimpleType.INT64)
-    mojom_const.value = mojom_types_mojom.ConstantOccurrence()
-    mojom_const.value.value = mojom_types_mojom.ConstantValue(
+    mojom_const.value = mojom_types_mojom.Value()
+    mojom_const.value.literal_value = mojom_types_mojom.LiteralValue(
         int64_value=20)
 
     struct = module.Struct()
@@ -213,12 +216,12 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         source_file_info=mojom_types_mojom.SourceFileInfo(file_name=file_name))
     value1 = mojom_types_mojom.EnumValue(
         decl_data=mojom_types_mojom.DeclarationData(short_name='val1'),
-        value=mojom_types_mojom.ConstantOccurrence(
-          value=mojom_types_mojom.ConstantValue(int32_value=20)))
+        enum_type_key='AnEnum',
+        int_value=20)
     value2 = mojom_types_mojom.EnumValue(
         decl_data=mojom_types_mojom.DeclarationData(short_name='val2'),
-        value=mojom_types_mojom.ConstantOccurrence(
-          value=mojom_types_mojom.ConstantValue(int32_value=70)))
+        enum_type_key='AnEnum',
+        int_value=70)
     mojom_enum.values = [value1, value2]
 
 
@@ -235,12 +238,12 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals(value1.decl_data.short_name, enum.fields[0].name)
     self.assertEquals(value2.decl_data.short_name, enum.fields[1].name)
 
-    self.assertEquals(value1.value.value.int32_value, enum.fields[0].value)
-    self.assertEquals(value2.value.value.int32_value, enum.fields[1].value)
+    self.assertEquals(value1.int_value, enum.fields[0].value)
+    self.assertEquals(value2.int_value, enum.fields[1].value)
 
-    self.assertEquals(value1.value.value.int32_value,
+    self.assertEquals(value1.int_value,
         enum.fields[0].numeric_value)
-    self.assertEquals(value2.value.value.int32_value,
+    self.assertEquals(value2.int_value,
         enum.fields[1].numeric_value)
 
   def test_unions(self):
@@ -425,8 +428,8 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
           declared_ordinal=5),
         type=mojom_types_mojom.Type(
           simple_type=mojom_types_mojom.SimpleType.UINT64),
-        default_value=mojom_types_mojom.ConstantOccurrence(
-          value=mojom_types_mojom.ConstantValue(uint64_value=20)))
+        default_value=mojom_types_mojom.Value(
+          literal_value=mojom_types_mojom.LiteralValue(uint64_value=20)))
 
     graph = mojom_files_mojom.MojomFileGraph()
     translator = mojom_translator.FileTranslator(graph, '')
@@ -435,28 +438,25 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals(mojom_param.decl_data.short_name, param.name)
     self.assertEquals(module.UINT64, param.kind)
     self.assertEquals(mojom_param.decl_data.declared_ordinal, param.ordinal)
-    self.assertEquals(
-        mojom_param.default_value.value.uint64_value, param.default)
 
 
-class TestEvalConst(unittest.TestCase):
+class TestEvalValue(unittest.TestCase):
 
-  def test_resolved_simple(self):
-    mojom = mojom_types_mojom.ConstantOccurrence()
-    mojom.value = mojom_types_mojom.ConstantValue(int64_value=20)
+  def test_literal_value(self):
+    mojom = mojom_types_mojom.Value()
+    mojom.literal_value = mojom_types_mojom.LiteralValue(int64_value=20)
 
     graph = mojom_files_mojom.MojomFileGraph()
-    const = mojom_translator.FileTranslator(graph, None).EvalConst(mojom)
+    const = mojom_translator.FileTranslator(graph, None).EvalValue(mojom)
 
     self.assertEquals(20, const)
 
-  def test_resolved_enum(self):
-    # TODO(azani): Handle resolved enums.
+  def test_resolved_user_defined_values(self):
+    # TODO(azani): Write this.
     pass
 
   def test_builtin_const(self):
-    mojom = mojom_types_mojom.ConstantOccurrence()
-    mojom.value = mojom_types_mojom.ConstantValue()
+    mojom = mojom_types_mojom.Value()
 
     graph = mojom_files_mojom.MojomFileGraph()
 
@@ -475,8 +475,8 @@ class TestEvalConst(unittest.TestCase):
         ]
 
     for mojom_builtin, string in gold:
-      mojom.value.builtin_value = mojom_builtin
-      const = mojom_translator.FileTranslator(graph, None).EvalConst(mojom)
+      mojom.builtin_value = mojom_builtin
+      const = mojom_translator.FileTranslator(graph, None).EvalValue(mojom)
       self.assertIsInstance(const, module.BuiltinValue)
       self.assertEquals(string, const.value)
 

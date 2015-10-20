@@ -65,7 +65,8 @@ class FileTranslator(object):
     if mojom_file.declared_mojom_objects:
       if mojom_file.declared_mojom_objects.top_level_constants:
         mod.constants = [
-            self.ConstFromMojom(self._graph.resolved_constants[key], None)
+            self.ConstFromMojom(
+                self._graph.resolved_values[key].declared_constant, None)
             for key in mojom_file.declared_mojom_objects.top_level_constants]
 
       user_defined_types = ['interfaces', 'structs', 'unions']
@@ -170,7 +171,12 @@ class FileTranslator(object):
     self.PopulateCommonFieldValues(struct_field, mojom_field)
     struct_field.ordinal = self.OrdinalFromMojom(mojom_field)
     if mojom_field.default_value:
-      struct_field.default = self.EvalConst(mojom_field.default_value)
+      if (mojom_field.default_value.tag ==
+          mojom_types_mojom.DefaultFieldValue.Tags.default_keyword):
+        struct_field.default = 'default'
+      else:
+        struct_field.default = self.EvalValue(
+            mojom_field.default_value.value)
 
     return struct_field
 
@@ -188,8 +194,6 @@ class FileTranslator(object):
     """
     param = module.Parameter()
     param.ordinal = self.OrdinalFromMojom(mojom)
-    if mojom.default_value:
-      param.default = self.EvalConst(mojom.default_value)
     self.PopulateCommonFieldValues(param, mojom)
     return param
 
@@ -231,8 +235,8 @@ class FileTranslator(object):
     field = module.EnumField()
     field.name = mojom_field.decl_data.short_name
     field.attributes = self.AttributesFromMojom(mojom_field)
-    field.value = self.EvalConst(mojom_field.value)
-    field.numeric_value = self.EvalConst(mojom_field.value)
+    field.value = mojom_field.int_value
+    field.numeric_value = mojom_field.int_value
     return field
 
   def AttributesFromMojom(self, mojom):
@@ -342,21 +346,26 @@ class FileTranslator(object):
     const = module.Constant()
     const.name = mojom_const.decl_data.short_name
     const.kind = self.KindFromMojom(mojom_const.type)
-    const.value = self.EvalConst(mojom_const.value)
+    const.value = self.EvalValue(mojom_const.value)
     const.parent_kind = parent_kind
     return const
 
-  def EvalConst(self, const):
-    """Evaluates a mojom_types_mojom.ConstantValue.
+  def EvalValue(self, value):
+    """Evaluates a mojom_types_mojom.Value.
 
     Args:
-      const: {mojom_types_mojom.ConstantValue} to be evaluated.
+      value: {mojom_types_mojom.Value} to be evaluated.
 
     Returns:
-      {int|float|str|bool} either the value of the constant or a string
-      referencing a built-in constant value.
+      {int|float|str|bool|None} the literal value if value is a LiteralValue,
+      the string name of the built-in constant if value is a
+      BuiltinConstantValue, the result of invoking EvalValue() on the
+      resolved concrete value of the user value reference if value is a
+      UserValueReference and its concrete value is not None, or else None
     """
-    if const.value.tag == mojom_types_mojom.ConstantValue.Tags.builtin_value:
+    if value.tag == mojom_types_mojom.Value.Tags.literal_value:
+      return value.literal_value.data
+    elif value.tag == mojom_types_mojom.Value.Tags.builtin_value:
       mojom_to_builtin = {
         mojom_types_mojom.BuiltinConstantValue.DOUBLE_INFINITY:
           'double.INFINITY',
@@ -370,9 +379,15 @@ class FileTranslator(object):
           'float.NEGATIVE_INFINITY',
         mojom_types_mojom.BuiltinConstantValue.FLOAT_NAN: 'float.NAN',
           }
-      return module.BuiltinValue(mojom_to_builtin[const.value.builtin_value])
+      return module.BuiltinValue(mojom_to_builtin[value.builtin_value])
 
-    return const.value.data
+    assert value.tag == mojom_types_mojom.Value.Tags.user_value_reference
+    concrete_value = value.user_value_reference.resolved_concrete_value
+    if concrete_value == None:
+      return None
+    assert (concrete_value.tag !=
+        mojom_types_mojom.Value.Tags.user_value_reference)
+    return self.EvalValue(concrete_value)
 
   def KindFromMojom(self, mojom_type):
     """Translates a mojom_types_mojom.Type to its equivalent module type.
