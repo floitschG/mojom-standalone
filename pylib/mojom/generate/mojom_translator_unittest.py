@@ -1,27 +1,20 @@
 # Copyright 2015 The Chromium Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-#
-# The first argument of this script should be the location of both
-# the generated mojom_files and mojom_types modules and their dependencies.
-
-def _FixPath():
-  import sys
-  # Importing mojom_files_mojom, mojom_types_mojom and mojom_translator
-  # requires that the python path be updated to include those files and their
-  # dependencies.
-  sys.path.insert(0, sys.argv.pop())
-
-_FixPath()
-
 
 import unittest
-import mojom_translator
-import mojom_files_mojom
-import mojom_types_mojom
 import module
 
+try:
+  import mojom_translator
+  import mojom_files_mojom
+  import mojom_types_mojom
+  bindings_imported = True
+except ImportError:
+  bindings_imported = False
 
+
+@unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TranslateFileGraph(unittest.TestCase):
 
   def test_basics(self):
@@ -44,6 +37,7 @@ class TranslateFileGraph(unittest.TestCase):
     self.assertEquals(len(modules), len(g.files))
 
 
+@unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TestTranslateFile(unittest.TestCase):
 
   def test_basics(self):
@@ -137,6 +131,7 @@ class TestTranslateFile(unittest.TestCase):
     self.assertEquals(mojom_const.decl_data.short_name, mod.constants[0].name)
 
 
+@unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TestUserDefinedTypeFromMojom(unittest.TestCase):
 
   def test_structs(self):
@@ -440,6 +435,7 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals(mojom_param.decl_data.declared_ordinal, param.ordinal)
 
 
+@unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TestEvalValue(unittest.TestCase):
 
   def test_literal_value(self):
@@ -481,10 +477,7 @@ class TestEvalValue(unittest.TestCase):
       self.assertEquals(string, const.value)
 
 
-
-
-# TODO(azani): Set the path of modules correctly.
-
+@unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TestKindFromMojom(unittest.TestCase):
 
   def test_simple_type(self):
