@@ -281,7 +281,7 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
 
   // Unrecognized message.
   ReportValidationError(
-      mojo::internal::VALIDATION_ERROR_MESSAGE_HEADER_UNKNOWN_METHOD);
+      mojo::internal::ValidationError::MESSAGE_HEADER_UNKNOWN_METHOD);
   return false;
 }
 
@@ -318,7 +318,7 @@ bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
 
   // Unrecognized message.
   ReportValidationError(
-      mojo::internal::VALIDATION_ERROR_MESSAGE_HEADER_UNKNOWN_METHOD);
+      mojo::internal::ValidationError::MESSAGE_HEADER_UNKNOWN_METHOD);
   return false;
 }
 {%- endif -%}

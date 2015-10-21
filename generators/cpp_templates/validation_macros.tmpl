@@ -1,7 +1,7 @@
 {%- macro validate_not_null_ptr(field_expr, field, object_name) %}
 if (!{{field_expr}}->offset) {
   ReportValidationError(
-      mojo::internal::VALIDATION_ERROR_UNEXPECTED_NULL_POINTER,
+      mojo::internal::ValidationError::UNEXPECTED_NULL_POINTER,
       "null {{field.name}} field in {{object_name}}");
   return false;
 }
@@ -9,7 +9,7 @@ if (!{{field_expr}}->offset) {
 
 {%- macro validate_encoded_ptr(field_expr) %}
 if (!mojo::internal::ValidateEncodedPointer(&{{field_expr}}->offset)) {
-  ReportValidationError(mojo::internal::VALIDATION_ERROR_ILLEGAL_POINTER);
+  ReportValidationError(mojo::internal::ValidationError::ILLEGAL_POINTER);
   return false;
 }
 {%- endmacro %}
@@ -30,13 +30,13 @@ if (!{{field.kind|cpp_wrapper_type}}::Data_::Validate(
 {%-   if not field.kind|is_nullable_kind %}
   if ({{field.name}}_handle.value() == mojo::internal::kEncodedInvalidHandleValue) {
     ReportValidationError(
-        mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE,
+        mojo::internal::ValidationError::UNEXPECTED_INVALID_HANDLE,
         "invalid {{field.name}} field in {{object_name}}");
     return false;
   }
 {%-   endif %}
   if (!bounds_checker->ClaimHandle({{field.name}}_handle)) {
-    ReportValidationError(mojo::internal::VALIDATION_ERROR_ILLEGAL_HANDLE);
+    ReportValidationError(mojo::internal::ValidationError::ILLEGAL_HANDLE);
     return false;
   }
 {%- endmacro -%}

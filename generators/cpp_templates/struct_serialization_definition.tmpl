@@ -11,7 +11,7 @@ bool {{struct.name}}::Serialize(void* buf,
 
   internal::{{struct.name}}_Data* output_ptr;
   if (Serialize_(this, &overlay_buf, &output_ptr) !=
-      mojo::internal::VALIDATION_ERROR_NONE) {
+      mojo::internal::ValidationError::NONE) {
     // TODO(vardhan): Once Serialize_() outputs handles that it serialized
     // (even partially, if there are failures), we should CHECK fail here if
     // handles are non-empty.
@@ -52,7 +52,7 @@ mojo::internal::ValidationError Serialize_(
   } else {
     *output = nullptr;
   }
-  return mojo::internal::VALIDATION_ERROR_NONE;
+  return mojo::internal::ValidationError::NONE;
 }
 
 void Deserialize_(internal::{{struct.name}}_Data* input,

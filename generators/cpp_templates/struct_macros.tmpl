@@ -52,7 +52,7 @@
     mojo::SerializeArray_({{input}}, {{buffer}}, {{output}},
                           &{{name}}_validate_params);
 {%-       if should_return_errors %}
-    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+    if (retval != mojo::internal::ValidationError::NONE)
       return retval;
 {%-       endif %}
   }
@@ -70,7 +70,7 @@
         {{input}}, {{buffer}}, {{output}},
         &{{name}}_validate_params);
 {%- if should_return_errors %}
-    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+    if (retval != mojo::internal::ValidationError::NONE)
       return retval;
 {%- endif %}
   }
@@ -87,7 +87,7 @@
                     {{output}},
                     {{inlined}});
 {%- if should_return_errors %}
-    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+    if (retval != mojo::internal::ValidationError::NONE)
       return retval;
 {%- endif %}
   }
@@ -102,7 +102,7 @@
                {{buffer}},
                {{output}});
 {%- if should_return_errors %}
-    if (retval != mojo::internal::VALIDATION_ERROR_NONE)
+    if (retval != mojo::internal::ValidationError::NONE)
       return retval;
 {%- endif %}
   }
@@ -175,7 +175,7 @@
 {%-       endif %}
   {{_validation_check_macro(
     condition = condition,
-    error_code = "mojo::internal::VALIDATION_ERROR_UNEXPECTED_NULL_POINTER",
+    error_code = "mojo::internal::ValidationError::UNEXPECTED_NULL_POINTER",
     error_msg = "null %s in %s" | format(name, struct_display_name),
     should_return_errors = should_return_errors)}}
 {%-     endif %}
@@ -195,7 +195,7 @@
 {%-       endif %}
   {{_validation_check_macro(
     condition = condition,
-    error_code = "mojo::internal::VALIDATION_ERROR_UNEXPECTED_INVALID_HANDLE",
+    error_code = "mojo::internal::ValidationError::UNEXPECTED_INVALID_HANDLE",
     error_msg = "invalid %s in %s" | format(name, struct_display_name),
     should_return_errors = should_return_errors)}}
 {%-     endif %}

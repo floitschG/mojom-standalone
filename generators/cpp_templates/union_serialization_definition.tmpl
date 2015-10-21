@@ -113,7 +113,7 @@ mojo::internal::ValidationError SerializeUnion_(
     result = nullptr;
   }
   *output = result;
-  return mojo::internal::VALIDATION_ERROR_NONE;
+  return mojo::internal::ValidationError::NONE;
 }
 
 void Deserialize_(internal::{{union.name}}_Data* input,
