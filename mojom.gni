@@ -202,6 +202,30 @@ template("mojom") {
     }
   }
 
+  # Some re-usable variables for the C++ source sets:
+  cpp_public_deps = []
+  if (defined(invoker.sources)) {
+    cpp_public_deps += [ ":${cpp_sources_target_name}" ]
+  }
+  cpp_public_deps += rebased_mojo_sdk_public_deps
+  if (defined(invoker.public_deps)) {
+    cpp_public_deps += invoker.public_deps
+  }
+  if (defined(invoker.sources)) {
+    cpp_public_deps += [ ":$generator_target_name" ]
+  }
+  cpp_deps = rebased_mojo_sdk_deps
+  if (defined(invoker.deps)) {
+    cpp_deps += invoker.deps
+  }
+  if (defined(invoker.mojo_sdk_deps)) {
+    foreach(sdk_dep, invoker.mojo_sdk_deps) {
+      # Check that the SDK dep was not mistakenly given as an absolute path.
+      assert(get_path_info(sdk_dep, "abspath") != sdk_dep)
+      cpp_deps += [ rebase_path(sdk_dep, ".", mojo_root) ]
+    }
+  }
+
   source_set(target_name) {
     if (defined(invoker.visibility)) {
       visibility = invoker.visibility
@@ -217,29 +241,30 @@ template("mojom") {
         rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
 
     public_deps = rebase_path([ "mojo/public/cpp/bindings" ], ".", mojo_root)
-    if (defined(invoker.sources)) {
-      public_deps += [ ":${cpp_sources_target_name}" ]
+    public_deps += cpp_public_deps
+
+    deps = cpp_deps
+  }
+
+  source_set("${target_name}_data_only") {
+    if (defined(invoker.visibility)) {
+      visibility = invoker.visibility
     }
-    public_deps += rebased_mojo_sdk_public_deps
-    if (defined(invoker.public_deps)) {
-      public_deps += invoker.public_deps
+    if (defined(invoker.testonly)) {
+      testonly = invoker.testonly
+    }
+    if (defined(invoker.sources)) {
+      data = process_file_template(invoker.sources, generator_js_outputs)
     }
 
-    deps = []
-    if (defined(invoker.sources)) {
-      public_deps += [ ":$generator_target_name" ]
-    }
-    deps += rebased_mojo_sdk_deps
-    if (defined(invoker.deps)) {
-      deps += invoker.deps
-    }
-    if (defined(invoker.mojo_sdk_deps)) {
-      foreach(sdk_dep, invoker.mojo_sdk_deps) {
-        # Check that the SDK dep was not mistakenly given as an absolute path.
-        assert(get_path_info(sdk_dep, "abspath") != sdk_dep)
-        deps += [ rebase_path(sdk_dep, ".", mojo_root) ]
-      }
-    }
+    public_configs =
+        rebase_path([ "mojo/public/build/config:mojo_sdk" ], ".", mojo_root)
+
+    public_deps = rebase_path([ "mojo/public/cpp/bindings:serialization" ],
+                              ".",
+                              mojo_root)
+    public_deps += cpp_public_deps
+    deps = cpp_deps
   }
 
   all_deps = rebased_mojo_sdk_deps + rebased_mojo_sdk_public_deps
