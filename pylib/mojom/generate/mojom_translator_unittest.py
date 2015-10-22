@@ -130,6 +130,20 @@ class TestTranslateFile(unittest.TestCase):
     self.assertEquals(mojom_enum.decl_data.short_name, mod.enums[0].name)
     self.assertEquals(mojom_const.decl_data.short_name, mod.constants[0].name)
 
+  def test_no_imports(self):
+    graph = mojom_files_mojom.MojomFileGraph(
+        resolved_types={})
+    file_name = 'root/f.mojom'
+    mojom_file = mojom_files_mojom.MojomFile(
+        file_name=file_name,
+        module_namespace='somens')
+    graph.files = { file_name: mojom_file }
+
+    # Should not throw exceptions despite imports not being set on the file.
+    mod = mojom_translator.FileTranslator(graph, file_name).Translate()
+
+    self.assertEquals([], mod.imports)
+
 
 @unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TestUserDefinedTypeFromMojom(unittest.TestCase):

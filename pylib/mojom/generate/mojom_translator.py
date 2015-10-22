@@ -57,7 +57,10 @@ class FileTranslator(object):
 
     mod = self._module
     self.PopulateModuleMetadata(mod, mojom_file)
-    mod.imports = [self.ImportFromMojom(imp) for imp in mojom_file.imports]
+
+    mod.imports = []
+    if mojom_file.imports:
+      mod.imports = [self.ImportFromMojom(imp) for imp in mojom_file.imports]
     # TODO(azani): The key should be equal to SourceFileInfo.file_name of
     # imported types.
     self._imports = {imp['module'].path: imp for imp in mod.imports}
