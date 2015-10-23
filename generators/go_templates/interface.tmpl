@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 {% import "struct.tmpl" as struct_macros %}
+{% import "mojom_type_macros.tmpl" as mojom_type_macros %}
 
 {%- macro declare_params(struct) %}
 {%- for field in struct.fields -%}
@@ -35,7 +36,7 @@
 
 
 
-{% macro define(interface) %}
+{% macro define(interface, descpkg, typepkg, pkg) %}
 type {{interface|name}} interface {
 {% for method in interface.methods %}
 	{{method|name}}{{declare_request_params(method)}}
@@ -66,6 +67,10 @@ type {{interface|name}}_Factory interface {
 
 func (f *{{interface|name}}_ServiceFactory) Name() string {
 	return {{interface|name(False)}}_Name
+}
+
+func (f *{{interface|name}}_ServiceFactory) ServiceDescription() {{descpkg}}ServiceDescription {
+	return &{{interface|name}}_ServiceDescription{}
 }
 
 func (f *{{interface|name}}_ServiceFactory) Create(messagePipe system.MessagePipeHandle) {
@@ -101,9 +106,9 @@ func (p *{{interface|name}}_Proxy) Close_Proxy() {
 }
 
 {% for method in interface.methods %}
-{{struct_macros.define(method.param_struct, False)}}
+{{struct_macros.define(method.param_struct, typepkg, pkg, False)}}
 {%-  if method|has_response %}
-{{struct_macros.define(method.response_param_struct, False)}}
+{{struct_macros.define(method.response_param_struct, typepkg, pkg, False)}}
 {%-   endif %}
 func (p *{{interface|name}}_Proxy) {{method|name}}{{declare_request_params(method)}} {
 	payload := &{{method.param_struct|name(False)}}{
@@ -169,6 +174,51 @@ func New{{interface|name}}Stub(r {{interface|name}}_Request, impl {{interface|na
 	connector := bindings.NewConnector(r.PassMessagePipe(), waiter)
 	return bindings.NewStub(connector, &{{interface|name(False)}}_Stub{connector, impl})
 }
+
+{{ mojom_type_macros.writeMojomTypeDef(typepkg, interface, pkg, exported) }}
+
+func (f *{{interface|name}}_Request) ServiceDescription() {{descpkg}}ServiceDescription {
+	return &{{interface|name}}_ServiceDescription{}
+}
+
+
+type {{interface|name}}_ServiceDescription struct{}
+
+{% if should_gen_mojom_types -%}
+func (sd *{{interface|name}}_ServiceDescription) GetTopLevelInterface() (outMojomInterface {{typepkg}}MojomInterface, err error) {
+	return {{interface|mojom_type_identifier}}(), nil
+}
+
+func (sd *{{interface|name}}_ServiceDescription) GetTypeDefinition(inTypeKey string) (outType mojom_types.UserDefinedType, err error) {
+	if udt, ok := GetAllMojomTypeDefinitions()[inTypeKey]; ok {
+		return udt, nil
+	}
+	return nil, fmt.Errorf("%s_ServiceDescription does not recognize %s", "{{interface|name}}", inTypeKey)
+}
+
+func (sd *{{interface|name}}_ServiceDescription) GetAllTypeDefinitions() (outDefinitions *map[string]mojom_types.UserDefinedType, err error) {
+	o := GetAllMojomTypeDefinitions()
+	return &o, nil
+}
+{%- else -%}
+func (sd *{{interface|name}}_ServiceDescription) GetTopLevelInterface() (outMojomInterface {{typepkg}}MojomInterface, err error) {
+	err = fmt.Errorf("GetTopLevelInterface not implemented")
+	return
+}
+
+func (sd *{{interface|name}}_ServiceDescription) GetTypeDefinition(inTypeKey string) (outType mojom_types.UserDefinedType, err error) {
+	err = fmt.Errorf("GetTypeDefinition not implemented")
+	return
+}
+
+func (sd *{{interface|name}}_ServiceDescription) GetAllTypeDefinitions() (outDefinitions *map[string]mojom_types.UserDefinedType, err error) {
+	err = fmt.Errorf("GetAllTypeDefinitions not implemented")
+	return
+}
+{%- endif %}
+
+var _ {{descpkg}}ServiceDescription = (*{{interface|name}}_ServiceDescription)(nil)
+
 
 func (s *{{interface|name(False)}}_Stub) Accept(message *bindings.Message) (err error) {
 	switch message.Header.Type {

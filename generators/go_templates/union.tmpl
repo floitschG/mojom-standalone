@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 {% import "encoding_macros.tmpl" as encoding_macros %}
+{% import "mojom_type_macros.tmpl" as mojom_type_macros %}
 
-
-{% macro define(union, exported=True) %}
+{% macro define(union, typepkg, package, exported=True) %}
 type {{union|name(exported)}} interface {
 	Tag() uint32
 	Interface() interface{}
@@ -76,6 +76,8 @@ func (u *{{struct_name}}) decodeInternal(decoder *bindings.Decoder) error {
 }
 
 {%   endfor %}
+
+{{ mojom_type_macros.writeMojomTypeDef(typepkg, union, package, exported) }}
 
 {% endmacro %}
 

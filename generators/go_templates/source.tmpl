@@ -20,23 +20,80 @@ import (
 {% import "interface.tmpl" as interface_macros %}
 {% import "struct.tmpl" as struct_macros %}
 {% import "union.tmpl" as union_macros %}
+{% import "mojom_reference_macros.tmpl" as mojom_reference_macros %}
 
-{#- Enum definitions #}
+{#- This init function initializes a mapping between identifiers and their
+    corresponding user-defined type. This could have been a MojomDescriptor,
+    but since it allows Types to be unresolved, it is more complex than is
+    necessary. It's simpler to resolve everything in codegen.
+    It is also difficult to insert changes to the description during the
+    process of generating each type, so this mapping is computed in Python.
+    Note: While we may register items into the map multiple times, this is okay
+    because the keys will match.
+-#}
+
+{%- if should_gen_mojom_types -%}
+// These IDs are the Mojom Identifiers / Type Keys.
+// Mojom libraries importing this one will use these identifiers when building
+// TypeReference objects.
 {% for enum in enums %}
-{{enum_macros.define(enum)}}
+var ID_{{enum|mojom_type_identifier}} string = "{{enum|mojom_type_identifier}}"
+{% endfor %}
+{% for struct in structs %}
+var ID_{{struct|mojom_type_identifier}} string = "{{struct|mojom_type_identifier}}"
+{% endfor %}
+{% for union in unions %}
+var ID_{{union|mojom_type_identifier}} string = "{{union|mojom_type_identifier}}"
+{% endfor %}
+{% for interface in interfaces %}
+var ID_{{interface|mojom_type_identifier}} string = "{{interface|mojom_type_identifier}}"
+{% endfor %}
+
+{% set mapping = package|qualified(None, false) ~ 'Desc__' %}
+var {{mapping}} = make(map[string]{{typepkg}}UserDefinedType)
+func init() {
+  {% for enum in enums %}
+  {{mojom_reference_macros.registerType(mapping, typepkg, package, enum)}}
+  {%- endfor %}
+  {% for struct in structs %}
+  {{mojom_reference_macros.registerType(mapping, typepkg, package, struct)}}
+  {%- endfor %}
+  {% for union in unions %}
+  {{mojom_reference_macros.registerType(mapping, typepkg, package, union)}}
+  {%- endfor %}
+  {% for interface in interfaces %}
+  {{mojom_reference_macros.registerType(mapping, typepkg, package, interface)}}
+  {%- endfor %}
+
+  {% for mi in mojom_imports.values() %}
+  {%- if mi ~ '.' != typepkg and mi ~ '.' != descpkg %}
+  for s, udt := range {{mi}}.GetAllMojomTypeDefinitions() {
+    {{mapping}}[s] = udt
+  }
+  {% endif -%}
+  {% endfor %}
+}
+func GetAllMojomTypeDefinitions() map[string]{{typepkg}}UserDefinedType {
+  return {{mapping}}
+}
+{% endif %}
+
+{# Enum definitions #}
+{%- for enum in enums %}
+{{enum_macros.define(enum, typepkg, package)}}
 {%- endfor %}
 
 {#- Interface definitions #}
 {% for interface in interfaces %}
-{{interface_macros.define(interface)}}
+{{interface_macros.define(interface, descpkg, typepkg, package)}}
 {%- endfor %}
 
 {#- Struct definitions #}
 {% for struct in structs %}
-{{struct_macros.define(struct)}}
+{{struct_macros.define(struct, typepkg, package)}}
 {%- endfor %}
 
 {#- Union definitions #}
 {% for union in unions %}
-{{union_macros.define(union)}}
+{{union_macros.define(union, typepkg, package)}}
 {%- endfor %}

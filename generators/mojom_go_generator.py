@@ -57,7 +57,19 @@ _kind_infos = {
   mojom.NULLABLE_STRING:       KindInfo('string', 'String', 'String', 64),
 }
 
+# _imports keeps track of the imports that the .go.mojom file needs to import.
 _imports = {}
+
+# _mojom_imports keeps a list of the other .mojom files imported by this one.
+_mojom_imports = {}
+
+# The mojom_types.mojom and service_describer.mojom files are special because
+# they are used to generate mojom Type's and ServiceDescription implementations.
+_service_describer_pkg_short = "service_describer"
+_service_describer_pkg = "mojo/public/interfaces/bindings/%s" % \
+  _service_describer_pkg_short
+_mojom_types_pkg_short = "mojom_types"
+_mojom_types_pkg = "mojo/public/interfaces/bindings/%s" % _mojom_types_pkg_short
 
 def GetBitSize(kind):
   if isinstance(kind, (mojom.Union)):
@@ -186,6 +198,40 @@ def EncodeSuffix(kind):
     return EncodeSuffix(mojom.MSGPIPE)
   return _kind_infos[kind].encode_suffix
 
+# This helper assists in the production of mojom_types.Type for simple kinds.
+# See _kind_infos above.
+def GetMojomTypeValue(kind, typepkg=''):
+  if not kind in _kind_infos:
+    return ''
+
+  nullable = 'true' if mojom.IsNullableKind(kind) else 'false'
+  if kind == mojom.BOOL or kind == mojom.FLOAT or kind == mojom.DOUBLE or \
+    mojom.IsIntegralKind(kind):
+
+    kind_name = UpperCamelCase(_kind_infos[kind].decode_suffix.upper())
+    if kind == mojom.FLOAT:
+      kind_name = "Float"
+    elif kind == mojom.DOUBLE:
+      kind_name = "Double"
+    return '%sTypeSimpleType{%sSimpleType_%s}' % (typepkg, typepkg, kind_name)
+  elif mojom.IsAnyHandleKind(kind):
+    kind_name = 'Unspecified'
+    if kind == mojom.DCPIPE:
+      kind_name = 'DataPipeConsumer'
+    elif kind == mojom.DPPIPE:
+      kind_name = 'DataPipeProducer'
+    elif kind == mojom.MSGPIPE:
+      kind_name = 'MessagePipe'
+    elif kind == mojom.SHAREDBUFFER:
+      kind_name = 'SharedBuffer'
+    return '%sTypeHandleType{%sHandleType{' \
+      'Nullable: %s, Kind: %sHandleType_Kind_%s}}' % \
+      (typepkg, typepkg, nullable, typepkg, kind_name)
+  elif mojom.IsStringKind(kind):
+    return '%sTypeStringType{%sStringType{%s}}' % (typepkg, typepkg, nullable)
+  else:
+    raise Exception('Missing case for kind: %s' % kind)
+
 def GetPackageName(module):
   return module.name.split('.')[0]
 
@@ -220,6 +266,7 @@ def GetAllEnums(module):
 
 # Adds an import required to use the provided |element|.
 # The required import is stored at '_imports'.
+# The mojom imports are also stored separately in '_mojom_imports'.
 def AddImport(module, element):
   if not isinstance(element, mojom.Kind):
     return
@@ -244,10 +291,46 @@ def AddImport(module, element):
   if path in _imports:
     return
   name = GetPackageName(imported['module'])
-  while name in _imports.values():
+  while name in _imports.values(): # This avoids repeated names.
     name += '_'
   _imports[path] = name
+  _mojom_imports[path] = name
 
+# The identifier cache is used by the Type generator to determine if a type has
+# already been generated or not. This prevents over-generation of the same type
+# when it is referred to in multiple ways.
+identifier_cache = {}
+def GetIdentifier(kind):
+  # Use the kind's module to determine the package name.
+  if hasattr(kind, 'module'):
+    package = GetPackageName(kind.module)
+  elif mojom.IsInterfaceRequestKind(kind):
+    package = GetPackageName(kind.kind.module)
+  else:
+    return ''
+
+  # Most kinds have a name, but those that don't should rely on their spec.
+  # Since spec can have : and ? characters, these must be replaced. Since ? is
+  # replaced with '', the caller must keep track of optionality on its own.
+  name_or_spec = (kind.name if hasattr(kind, 'name') else kind.spec)
+  package_unique = name_or_spec.replace(':', '_').replace('?', '')
+  return '%s_%s' % (package, package_unique)
+
+def StoreIdentifier(identifier, cache_name):
+  if not cache_name in identifier_cache:
+    identifier_cache[cache_name] = {}
+  identifier_cache[cache_name][identifier] = True
+  return ''
+
+def CheckIdentifier(identifier, cache_name):
+  if not cache_name in identifier_cache:
+    identifier_cache[cache_name] = {}
+  return identifier in identifier_cache[cache_name]
+
+# Get the mojom type's identifier suffix.
+def GetMojomTypeIdentifier(kind):
+  # Since this should be unique, it is based on the type's identifier.
+  return "%s__" % GetIdentifier(kind)
 
 class Generator(generator.Generator):
   go_filters = {
@@ -258,6 +341,9 @@ class Generator(generator.Generator):
     'go_type': GetGoType,
     'expression_to_text': ExpressionToText,
     'has_response': lambda method: method.response_parameters is not None,
+    'identifier': GetIdentifier,
+    'identifier_check': CheckIdentifier,
+    'identifier_store': StoreIdentifier,
     'is_array': mojom.IsArrayKind,
     'is_enum': mojom.IsEnumKind,
     'is_handle': mojom.IsAnyHandleKind,
@@ -271,20 +357,32 @@ class Generator(generator.Generator):
     'is_struct': mojom.IsStructKind,
     'is_union': mojom.IsUnionKind,
     'qualified': GetQualifiedName,
+    'mojom_type': GetMojomTypeValue,
+    'mojom_type_identifier': GetMojomTypeIdentifier,
     'name': GetNameForElement,
     'unqualified_name': GetUnqualifiedNameForElement,
     'package': GetPackageNameForElement,
     'tab_indent': lambda s, size = 1: ('\n' + '\t' * size).join(s.splitlines())
   }
 
+  # TODO: This value should be settable via arguments. If False, then mojom type
+  # information will not be generated.
+  should_gen_mojom_types = True
+
   def GetParameters(self):
+    package = GetPackageName(self.module)
     return {
       'enums': GetAllEnums(self.module),
-      'imports': self.GetImports(),
+      'imports': self.GetImports()[0],
       'interfaces': self.GetInterfaces(),
-      'package': GetPackageName(self.module),
+      'mojom_imports': self.GetMojomImports(),
+      'package': package,
       'structs': self.GetStructs(),
-      'unions': self.GetUnions(),
+      'descpkg': '%s.' % _service_describer_pkg_short \
+        if package != _service_describer_pkg_short else '',
+      'typepkg': '%s.' % _mojom_types_pkg_short \
+        if package != _mojom_types_pkg_short else '',
+      'unions': self.GetUnions()
     }
 
   @UseJinja('go_templates/source.tmpl', filters=go_filters)
@@ -305,11 +403,15 @@ class Generator(generator.Generator):
     return {
       'namespace': self.module.namespace,
       'module': self.module,
+      'should_gen_mojom_types': self.should_gen_mojom_types,
     }
 
   # Scans |self.module| for elements that require imports and adds all found
-  # imports to '_imports' dict. Returns a list of imports that should include
-  # the generated go file.
+  # imports to '_imports' dict. Mojom imports are stored in the '_mojom_imports'
+  # dict. This operation is idempotent.
+  # Returns a tuple:
+  # - list of imports that should include the generated go file
+  # - the dictionary of _mojom_imports
   def GetImports(self):
     # Imports can only be used in structs, constants, enums, interfaces.
     all_structs = list(self.module.structs)
@@ -344,6 +446,24 @@ class Generator(generator.Generator):
         if field.value:
           AddImport(self.module, field.value)
 
+    # Mojom Type generation requires additional imports.
+    defInterface = len(self.module.interfaces) > 0
+    defOtherType = len(self.module.unions) + len(all_structs) + \
+      len(GetAllEnums(self.module)) > 0
+
+    if GetPackageName(self.module) != _mojom_types_pkg_short:
+      if defInterface:
+        # Each Interface has a service description that uses this.
+        _imports[_mojom_types_pkg] = _mojom_types_pkg_short
+      if defOtherType and self.should_gen_mojom_types:
+        # This import is needed only if generating mojom type definitions.
+        _imports[_mojom_types_pkg] = _mojom_types_pkg_short
+
+    if GetPackageName(self.module) != _service_describer_pkg_short and \
+      defInterface:
+      # Each Interface has a service description that uses this.
+      _imports[_service_describer_pkg] = _service_describer_pkg_short
+
 # TODO(rogulenko): add these after generating constants and struct defaults.
 #    for constant in GetAllConstants(self.module):
 #      AddImport(self.module, constant.value)
@@ -354,7 +474,11 @@ class Generator(generator.Generator):
         imports_list.append('"%s"' % i)
       else:
         imports_list.append('%s "%s"' % (_imports[i], i))
-    return sorted(imports_list)
+    return sorted(imports_list), _mojom_imports
+
+  def GetMojomImports(self):
+    # GetImports (idempotent) prepares the _imports and _mojom_imports maps.
+    return self.GetImports()[1]
 
   # Overrides the implementation from the base class in order to customize the
   # struct and field names.
