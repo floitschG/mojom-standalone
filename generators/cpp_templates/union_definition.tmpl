@@ -31,6 +31,10 @@ bool {{class_name}}::Validate(const void* data,
   const {{class_name}}* object = static_cast<const {{class_name}}*>(data);
   MOJO_ALLOW_UNUSED_LOCAL(object);
 
+  if (object->is_null()) {
+    return true;
+  }
+
   switch (object->tag) {
 {%  for field in union.fields %}
     case {{enum_name}}::{{field.name|upper}}: {
