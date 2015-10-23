@@ -206,6 +206,8 @@ class Struct(ReferenceKind):
   ReferenceKind.AddSharedProperty('imported_from')
   ReferenceKind.AddSharedProperty('fields')
   ReferenceKind.AddSharedProperty('attributes')
+  ReferenceKind.AddSharedProperty('constants')
+  ReferenceKind.AddSharedProperty('enums')
 
   def __init__(self, name=None, module=None, attributes=None):
     if name is not None:
@@ -217,6 +219,8 @@ class Struct(ReferenceKind):
     self.module = module
     self.imported_from = None
     self.fields = []
+    self.constants = []
+    self.enums = []
     self.attributes = attributes
 
   def AddField(self, name, kind, ordinal=None, default=None, attributes=None):
@@ -421,6 +425,8 @@ class Module(object):
     self.structs = []
     self.unions = []
     self.interfaces = []
+    self.enums = []
+    self.constants = []
     self.kinds = {}
     self.attributes = attributes
 
