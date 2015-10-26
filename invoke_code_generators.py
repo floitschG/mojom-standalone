@@ -9,7 +9,14 @@
 # This script is not related mojom_bindings_generator.py (which is part of v1
 # of the mojom parser pipeline).
 
-def _ProcessArgs():
+def _ParseCLIArgs():
+  """Parses the command line arguments.
+
+  Returns:
+    tuple<Namespace, list<str>> The first value of the tuple is a Namespace
+    holding the value of the optional args. The second value of the tuple is
+    a list of the remaining arguments.
+  """
   import argparse
 
   parser = argparse.ArgumentParser(
@@ -27,27 +34,22 @@ def _ProcessArgs():
                       default="c++,dart,go,javascript,java,python",
                       help="comma-separated list of generators")
 
-  args, remaining_args = parser.parse_known_args()
-
-  if remaining_args:
-    raise Exception('Unexpected positional arguments: %s' %
-        ', '.join(remaining_args))
-
-  return args
+  return parser.parse_known_args()
 
 
-def _FixPath(args):
+
+def _FixPath():
   import sys
   import os
+  # We need to parse command line args before imports so we can find out where
+  # the python bindings are located and add them to sys.path.
+  args, _ = _ParseCLIArgs()
   sys.path.insert(0, args.py_bindings_dir)
   sys.path.insert(0, os.path.join(os.path.dirname(
     os.path.abspath(__file__)), "pylib"))
 
 
-# We need to parse command line args before imports so we can find out where
-# the python bindings are located and add them to sys.path.
-args = _ProcessArgs()
-_FixPath(args)
+_FixPath()
 
 
 import imp
@@ -111,7 +113,9 @@ def ReadMojomFileGraphFromFile(fp):
   return mojom_files_mojom.MojomFileGraph.Deserialize(context)
 
 
-def main(args):
+def main():
+  args, remaining_args = _ParseCLIArgs()
+
   if args.file_graph == '-':
     fp = sys.stdin
   else:
@@ -126,10 +130,16 @@ def main(args):
     # TODO(azani): Fix module path
     for generator_module in generator_modules:
       generator = generator_module.Generator(module, args.output_dir)
-      # TODO(azani): Handle language-specific args
-      generator.GenerateFiles([])
 
+      # Look at unparsed args for generator-specific args.
+      filtered_args = []
+      if hasattr(generator_module, 'GENERATOR_PREFIX'):
+        prefix = '--' + generator_module.GENERATOR_PREFIX + '_'
+        filtered_args = [arg for arg in remaining_args
+                         if arg.startswith(prefix)]
+
+      generator.GenerateFiles(filtered_args)
 
 
 if __name__ == "__main__":
-  sys.exit(main(args))
+  sys.exit(main())
