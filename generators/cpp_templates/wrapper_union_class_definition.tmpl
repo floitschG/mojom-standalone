@@ -2,7 +2,7 @@
 {{union.name}}Ptr {{union.name}}::New() {
   {{union.name}}Ptr rv;
   mojo::internal::StructHelper<{{union.name}}>::Initialize(&rv);
-  return rv.Pass();
+  return rv;
 }
 
 {{union.name}}::{{union.name}}() {
@@ -32,7 +32,7 @@
     case Tag::__UNKNOWN__:
       break;
   };
-  return rv.Pass();
+  return rv;
 }
 {%- endif %}
 
