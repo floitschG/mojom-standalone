@@ -61,8 +61,9 @@ class FileTranslator(object):
     mod.imports = []
     if mojom_file.imports:
       mod.imports = [self.ImportFromMojom(imp) for imp in mojom_file.imports]
-    # TODO(azani): The key should be equal to SourceFileInfo.file_name of
-    # imported types.
+    # When translating an imported type, its SourceFileInfo.file_name is a key
+    # into self._imports. The value is the module from which the type was
+    # imported.
     self._imports = {imp['module'].path: imp for imp in mod.imports}
 
     if mojom_file.declared_mojom_objects:
@@ -94,7 +95,6 @@ class FileTranslator(object):
       mojom_file: {MojomFile} the file to be translated.
     """
     mod.name = os.path.basename(mojom_file.file_name)
-    # TODO(azani): Fix the path here!
     mod.path = mojom_file.file_name
     mod.namespace = mojom_file.module_namespace
     if mojom_file.attributes:
