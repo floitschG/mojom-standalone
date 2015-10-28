@@ -9,6 +9,12 @@
 # This script is not related mojom_bindings_generator.py (which is part of v1
 # of the mojom parser pipeline).
 
+import argparse
+import imp
+import os
+import sys
+
+
 def _ParseCLIArgs():
   """Parses the command line arguments.
 
@@ -17,8 +23,6 @@ def _ParseCLIArgs():
     holding the value of the optional args. The second value of the tuple is
     a list of the remaining arguments.
   """
-  import argparse
-
   parser = argparse.ArgumentParser(
       description='Generate bindings from mojom parser output.')
   parser.add_argument('-f', '--file-graph', dest='file_graph',
@@ -39,24 +43,18 @@ def _ParseCLIArgs():
   return parser.parse_known_args()
 
 
-
 def _FixPath():
-  import sys
-  import os
   # We need to parse command line args before imports so we can find out where
   # the python bindings are located and add them to sys.path.
   args, _ = _ParseCLIArgs()
   sys.path.insert(0, args.py_bindings_dir)
   sys.path.insert(0, os.path.join(os.path.dirname(
-    os.path.abspath(__file__)), "pylib"))
+      os.path.abspath(__file__)), "pylib"))
 
 
 _FixPath()
 
 
-import imp
-import os
-import sys
 import mojom_files_mojom
 from mojom.generate import mojom_translator
 from mojo_bindings import serialization
