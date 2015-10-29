@@ -365,6 +365,8 @@ class Interface(ReferenceKind):
   ReferenceKind.AddSharedProperty('imported_from')
   ReferenceKind.AddSharedProperty('methods')
   ReferenceKind.AddSharedProperty('attributes')
+  ReferenceKind.AddSharedProperty('constants')
+  ReferenceKind.AddSharedProperty('enums')
 
   def __init__(self, name=None, module=None, attributes=None):
     if name is not None:

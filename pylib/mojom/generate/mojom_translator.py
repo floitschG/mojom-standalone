@@ -145,7 +145,8 @@ class FileTranslator(object):
     mojom_struct = mojom_type.struct_type
     self.PopulateUserDefinedType(struct, mojom_struct)
     struct.fields = [self.StructFieldFromMojom(f) for f in mojom_struct.fields]
-    # TODO(azani): Handle mojom_struct.decl_data.contained_declarations.
+    self.PopulateContainedDeclarationsFromMojom(
+        struct, mojom_struct.decl_data.contained_declarations)
 
   def UnionFieldFromMojom(self, mojom_field):
     """Translates a mojom_types_mojom.UnionField to a module.UnionField.
@@ -211,18 +212,42 @@ class FileTranslator(object):
     field.kind = self.KindFromMojom(mojom_field.type)
     field.attributes = self.AttributesFromMojom(mojom_field)
 
-  def EnumFromMojom(self, enum, mojom_type, parent_kind=None):
+  def PopulateContainedDeclarationsFromMojom(
+      self, parent_kind, contained_declarations):
+    """Populates a module.Struct|module.Interface with contained declarations.
+
+    Args:
+      parent_kind: {module.Struct|module.Interface} to be populated.
+      contained_declarations: {mojom_types_mojom.ContainedDeclarations} from
+        which the contained types need to be extracted.
+    """
+    if not contained_declarations:
+      return
+
+    if contained_declarations.enums:
+      for enum_key in contained_declarations.enums:
+        enum = self.UserDefinedFromTypeKey(enum_key)
+        enum.name = '%s.%s' % (parent_kind.name, enum.name)
+        enum.parent_kind = parent_kind
+        parent_kind.enums.append(enum)
+
+    if contained_declarations.constants:
+      for const_key in contained_declarations.constants:
+        const = self.ConstFromMojom(
+            self._graph.resolved_values[const_key].declared_constant,
+            parent_kind)
+        parent_kind.constants.append(const)
+
+  def EnumFromMojom(self, enum, mojom_type):
     """Populates a module.Enum based on a MojomEnum.
 
     Args:
       enum: {module.Enum} to be populated.
       mojom_type: {mojom_types_mojom.Type} referring to the MojomEnum to be
         translated.
-      parent_kind: {MojomStruct|MojomInterface} in which the enum is nested.
     """
     assert mojom_type.tag == mojom_types_mojom.UserDefinedType.Tags.enum_type
     mojom_enum = mojom_type.enum_type
-    enum.parent_kind = parent_kind
     self.PopulateUserDefinedType(enum, mojom_enum)
     enum.fields = [self.EnumFieldFromMojom(value)
         for value in mojom_enum.values]
@@ -315,6 +340,8 @@ class FileTranslator(object):
     interface.name = mojom_interface.interface_name
     interface.methods = [self.MethodFromMojom(mojom_method, interface)
         for mojom_method in mojom_interface.methods.itervalues()]
+    self.PopulateContainedDeclarationsFromMojom(
+        interface, mojom_interface.decl_data.contained_declarations)
 
   def MethodFromMojom(self, mojom_method, interface):
     """Translates a mojom_types_mojom.MojomMethod to a module.Method.

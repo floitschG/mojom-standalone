@@ -238,7 +238,7 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     enum = module.Enum()
     translator = mojom_translator.FileTranslator(graph, file_name)
     translator.EnumFromMojom(
-        enum, mojom_types_mojom.UserDefinedType(enum_type=mojom_enum), None)
+        enum, mojom_types_mojom.UserDefinedType(enum_type=mojom_enum))
 
     self.assertEquals(translator._module, enum.module)
     self.assertEquals(mojom_enum.decl_data.short_name, enum.name)
@@ -447,6 +447,45 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals(mojom_param.decl_data.short_name, param.name)
     self.assertEquals(module.UINT64, param.kind)
     self.assertEquals(mojom_param.decl_data.declared_ordinal, param.ordinal)
+
+  def test_contained_declarations(self):
+    graph = mojom_files_mojom.MojomFileGraph()
+    file_name = 'root/f.mojom'
+
+    mojom_enum = mojom_types_mojom.MojomEnum(
+        values=[],
+        decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AnEnum',
+          source_file_info=mojom_types_mojom.SourceFileInfo(
+            file_name=file_name)))
+    graph.resolved_types = {
+        'enum_key': mojom_types_mojom.UserDefinedType(enum_type=mojom_enum)}
+
+    mojom_const = mojom_types_mojom.DeclaredConstant(
+        decl_data=mojom_types_mojom.DeclarationData(short_name='AConst'),
+        type=mojom_types_mojom.Type(
+          simple_type=mojom_types_mojom.SimpleType.INT64),
+        value=mojom_types_mojom.Value(
+          literal_value=mojom_types_mojom.LiteralValue(
+            int64_value=30)))
+    user_defined_value = mojom_types_mojom.UserDefinedValue()
+    user_defined_value.declared_constant = mojom_const
+    graph.resolved_values = {'value_key': user_defined_value}
+
+    contained_declarations = mojom_types_mojom.ContainedDeclarations(
+        enums=['enum_key'], constants=['value_key'])
+
+    translator = mojom_translator.FileTranslator(graph, file_name)
+    struct = module.Struct(name='parent')
+    translator.PopulateContainedDeclarationsFromMojom(
+        struct, contained_declarations)
+
+    self.assertEquals(
+        'parent.' + mojom_enum.decl_data.short_name, struct.enums[0].name)
+    self.assertEquals(struct, struct.enums[0].parent_kind)
+    self.assertEquals(
+        mojom_const.decl_data.short_name, struct.constants[0].name)
+    self.assertEquals(struct, struct.constants[0].parent_kind)
 
 
 @unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
