@@ -378,6 +378,8 @@ class Interface(ReferenceKind):
     self.name = name
     self.imported_from = None
     self.methods = []
+    self.enums = []
+    self.constants = []
     self.attributes = attributes
 
   def AddMethod(self, name, ordinal=None, attributes=None):
