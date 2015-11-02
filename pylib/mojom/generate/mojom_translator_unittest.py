@@ -226,6 +226,8 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     value1 = mojom_types_mojom.EnumValue(
         decl_data=mojom_types_mojom.DeclarationData(short_name='val1'),
         enum_type_key='AnEnum',
+        initializer_value=mojom_types_mojom.Value(
+            literal_value=mojom_types_mojom.LiteralValue(uint64_value=20)),
         int_value=20)
     value2 = mojom_types_mojom.EnumValue(
         decl_data=mojom_types_mojom.DeclarationData(short_name='val2'),
@@ -247,8 +249,8 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals(value1.decl_data.short_name, enum.fields[0].name)
     self.assertEquals(value2.decl_data.short_name, enum.fields[1].name)
 
-    self.assertEquals(value1.int_value, enum.fields[0].value)
-    self.assertEquals(value2.int_value, enum.fields[1].value)
+    self.assertEquals('20', enum.fields[0].value)
+    self.assertIsNone(enum.fields[1].value)
 
     self.assertEquals(value1.int_value,
         enum.fields[0].numeric_value)
