@@ -263,8 +263,18 @@ class FileTranslator(object):
     field = module.EnumField()
     field.name = mojom_field.decl_data.short_name
     field.attributes = self.AttributesFromMojom(mojom_field)
-    field.value = mojom_field.int_value
     field.numeric_value = mojom_field.int_value
+    if mojom_field.initializer_value is not None:
+      # TODO(rudominer) resolved_numeric_value will always be equal to
+      # field.numeric_value above, once mojom_field.int_value is implemented.
+      resolved_numeric_value = self.EvalValue(mojom_field.initializer_value)
+      assert isinstance(resolved_numeric_value, int)
+      # TODO(rudominer) Below we set field.value to a literal value even if in
+      # the .mojom file the enum value initializer  was a value reference.
+      # Thus we are hiding some information from the code generators. We may
+      # wish to revisit this decision.
+      field.value = str(resolved_numeric_value)
+
     return field
 
   def AttributesFromMojom(self, mojom):
