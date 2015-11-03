@@ -102,11 +102,17 @@ class SerializableType(Type):
     raise NotImplementedError()
 
 
-class BooleanType(Type):
+class BooleanType(SerializableType):
   """Type object for booleans"""
 
   def Convert(self, value):
     return bool(value)
+
+  def Serialize(self, value, data_offset, data, handle_offset):
+    return (_ConvertBooleansToByte([value]), [])
+
+  def Deserialize(self, value, context):
+    return _ConvertByteToBooleans(value)[0]
 
 
 class NumericType(SerializableType):
@@ -636,7 +642,7 @@ class MapType(SerializableType):
       return GenericArrayType(t)
 
 
-TYPE_BOOL = BooleanType()
+TYPE_BOOL = BooleanType('B')
 
 TYPE_INT8 = IntegerType('b')
 TYPE_INT16 = IntegerType('h')
