@@ -175,9 +175,9 @@ def GetFieldType(kind, field=None):
 
   return _kind_to_type[kind]
 
-def GetFieldDescriptor(field, index, min_version):
+def GetFieldDescriptor(field, index, min_version, union_field=False):
   class_name = 'SingleFieldGroup'
-  if field.kind == mojom.BOOL:
+  if field.kind == mojom.BOOL and not union_field:
     class_name = 'FieldDescriptor'
   arguments = [ '%r' % GetNameForElement(field) ]
   arguments.append(GetFieldType(field.kind, field))
@@ -195,7 +195,7 @@ def GetStructFieldDescriptor(packed_field):
       packed_field.field, packed_field.index, packed_field.min_version)
 
 def GetUnionFieldDescriptor(field):
-  return GetFieldDescriptor(field, field.ordinal, 0)
+  return GetFieldDescriptor(field, field.ordinal, 0, union_field=True)
 
 def GetFieldGroup(byte):
   if byte.packed_fields[0].field.kind == mojom.BOOL:
