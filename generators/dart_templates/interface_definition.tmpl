@@ -62,20 +62,27 @@ class {{interface|name}}ProxyImpl extends bindings.Proxy {
         var r = {{response_struct|name}}.deserialize(
             message.payload);
         if (!message.header.hasRequestId) {
-          throw 'Expected a message with a valid request Id.';
+          proxyError("Expected a message with a valid request Id.");
+          return;
         }
         Completer c = completerMap[message.header.requestId];
         if (c == null) {
-          throw 'Message had unknown request Id: ${message.header.requestId}';
+          proxyError(
+              "Message had unknown request Id: ${message.header.requestId}");
+          return;
         }
         completerMap.remove(message.header.requestId);
-        assert(!c.isCompleted);
+        if (c.isCompleted) {
+          proxyError("Response completer already completed");
+          return;
+        }
         c.complete(r);
         break;
 {%- endif %}
 {%- endfor %}
       default:
-        throw new bindings.MojoCodecError("Unexpected message name");
+        proxyError("Unexpected message type: ${message.header.type}");
+        close(immediate: true);
         break;
     }
   }
@@ -100,7 +107,10 @@ class _{{interface|name}}ProxyCalls implements {{interface|name}} {
   {%- endfor -%}
   {%- set request_struct = method.param_struct -%}
     ) {
-      assert(_proxyImpl.isBound);
+      if (!_proxyImpl.isBound) {
+        _proxyImpl.proxyError("The Proxy is closed.");
+        return;
+      }
       var params = new {{request_struct|name}}();
   {%- for parameter in method.parameters %}
       params.{{parameter|name}} = {{parameter|name}};
@@ -115,7 +125,6 @@ class _{{interface|name}}ProxyCalls implements {{interface|name}} {
       {{parameter.kind|dart_type}} {{parameter|name}},
   {%- endfor -%}
       [Function responseFactory = null]) {
-      assert(_proxyImpl.isBound);
       var params = new {{request_struct|name}}();
   {%- for parameter in method.parameters %}
       params.{{parameter|name}} = {{parameter|name}};
@@ -170,6 +179,10 @@ class {{interface|name}}Proxy implements bindings.ProxyBase {
   }
 
   Future close({bool immediate: false}) => impl.close(immediate: immediate);
+
+  Future responseOrError(Future f) => impl.responseOrError(f);
+
+  Future get errorFuture => impl.errorFuture;
 
   int get version => impl.version;
 
