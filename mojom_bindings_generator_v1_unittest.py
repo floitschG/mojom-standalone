@@ -4,7 +4,7 @@
 
 import unittest
 
-from mojom_bindings_generator import MakeImportStackMessage
+from mojom_bindings_generator_v1 import MakeImportStackMessage
 
 
 class MojoBindingsGeneratorTest(unittest.TestCase):
