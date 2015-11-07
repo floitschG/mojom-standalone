@@ -43,29 +43,6 @@ const {{constant.kind|cpp_pod_type}} {{constant.name}} = {{constant|constant_val
 {%- endfor %}
 
 namespace internal {
-namespace {
-
-#pragma pack(push, 1)
-
-{#--- Interface parameter definitions #}
-{%- for interface in interfaces %}
-{%-   for method in interface.methods %}
-{%-     set method_name = "k%s_%s_Name"|format(interface.name, method.name) %}
-const uint32_t {{method_name}} = {{method.ordinal}};
-{%      set struct = method.param_struct %}
-{%      include "struct_declaration.tmpl" %}
-{%-     include "struct_definition.tmpl" %}
-{%-     if method.response_parameters != None %}
-{%-       set struct = method.response_param_struct %}
-{%        include "struct_declaration.tmpl" %}
-{%-       include "struct_definition.tmpl" %}
-{%-     endif %}
-{%-   endfor %}
-{%- endfor %}
-
-#pragma pack(pop)
-
-}  // namespace
 
 {#--- Struct definitions #}
 {%  for struct in structs %}
@@ -75,6 +52,18 @@ const uint32_t {{method_name}} = {{method.ordinal}};
 {#--- Union definitions #}
 {%  for union in unions %}
 {%-   include "union_definition.tmpl" %}
+{%- endfor %}
+
+{#--- Definitions of the data structs for interface methods #}
+{%- for interface in interfaces %}
+{%-   for method in interface.methods %}
+{%      set struct = method.param_struct %}
+{%-     include "struct_definition.tmpl" %}
+{%-     if method.response_parameters != None %}
+{%-       set struct = method.response_param_struct %}
+{%-       include "struct_definition.tmpl" %}
+{%-     endif %}
+{%-   endfor %}
 {%- endfor %}
 
 }  // namespace internal
@@ -121,6 +110,20 @@ MOJO_STATIC_CONST_MEMBER_DEFINITION const {{constant.kind|cpp_pod_type}} {{struc
 {#--- Union Serialization Helpers #}
 {%- for union in unions %}
 {%-   include "union_serialization_definition.tmpl" %}
+{%- endfor %}
+
+{#--- Structs for interface method parameters #}
+{%- for interface in interfaces %}
+{%-   for method in interface.methods %}
+{%      set struct = method.param_struct %}
+{%-     include "wrapper_class_definition.tmpl" %}
+{%-     include "struct_serialization_definition.tmpl" %}
+{%-     if method.response_parameters != None %}
+{%-       set struct = method.response_param_struct %}
+{%-       include "wrapper_class_definition.tmpl" %}
+{%-       include "struct_serialization_definition.tmpl" %}
+{%-     endif %}
+{%-   endfor %}
 {%- endfor %}
 
 {%- for namespace in namespaces_as_array|reverse %}

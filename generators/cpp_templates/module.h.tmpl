@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+{%- import "struct_macros.tmpl" as struct_macros %}
+{%  import "interface_macros.tmpl" as interface_macros -%}
 {%- set header_guard = "%s_H_"|
         format(module.path|upper|replace("/","_")|replace(".","_")) %}
 
@@ -58,12 +60,7 @@ using {{interface.name}}Ptr = mojo::InterfacePtr<{{interface.name}}>;
 
 {#--- Struct Forward Declarations -#}
 {%  for struct in structs %}
-class {{struct.name}};
-{%    if struct|should_inline %}
-using {{struct.name}}Ptr = mojo::InlinedStructPtr<{{struct.name}}>;
-{%    else %}
-using {{struct.name}}Ptr = mojo::StructPtr<{{struct.name}}>;
-{%    endif %}
+{{ struct_macros.structptr_forward_decl(struct) }}
 {%  endfor %}
 
 {#--- Union Forward Declarations -#}
@@ -137,6 +134,11 @@ typedef mojo::StructPtr<{{union.name}}> {{union.name}}Ptr;
 {%      include "union_serialization_declaration.tmpl" %}
 {%-   endfor %}
 {%- endif %}
+
+{#--- Request and response parameter structs for Interface methods -#}
+{%  for interface in interfaces -%}
+      {{interface_macros.declare_param_structs_for_interface(interface)}}
+{%- endfor %}
 
 {%- for namespace in namespaces_as_array|reverse %}
 }  // namespace {{namespace}}

@@ -264,3 +264,17 @@
 {%-   endfor %}
   } while (false);
 {%- endmacro %}
+
+{# Forward declares |struct|, and typedefs the appropriate Ptr wrapper
+   (|mojo::StructPtr| or |mojo::InlinedStructPtr|).  This macro is expanded for
+   all generated structs:
+   - user-defined mojo structs
+   - interface method params/response params #}
+{%- macro structptr_forward_decl(struct) -%}
+class {{struct.name}};
+{%    if struct|should_inline %}
+using {{struct.name}}Ptr = mojo::InlinedStructPtr<{{struct.name}}>;
+{%    else %}
+using {{struct.name}}Ptr = mojo::StructPtr<{{struct.name}}>;
+{%    endif %}
+{% endmacro %}
