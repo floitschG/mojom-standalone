@@ -24,8 +24,9 @@
 # It is the responsibility of the module's loader to handle this.
 
 import os
-import mojom_files_mojom
-import mojom_types_mojom
+
+from generated import mojom_files_mojom
+from generated import mojom_types_mojom
 import module
 
 

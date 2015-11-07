@@ -7,8 +7,8 @@ import module
 
 try:
   import mojom_translator
-  import mojom_files_mojom
-  import mojom_types_mojom
+  from generated import mojom_files_mojom
+  from generated import mojom_types_mojom
   bindings_imported = True
 except ImportError:
   bindings_imported = False

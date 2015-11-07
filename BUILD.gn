@@ -4,7 +4,7 @@
 
 group("bindings") {
   deps = [
-    "../../python",
-    "../../interfaces/bindings",
+    "../../python:serialization_bindings",
+    "../../python:mojo_system_impl",
   ]
 }
