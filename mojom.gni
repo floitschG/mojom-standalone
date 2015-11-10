@@ -4,6 +4,11 @@
 
 import("../../mojo_sdk.gni")
 
+# TODO(azani): Remove when the switch to the new compiler is complete.
+declare_args() {
+  use_new_mojom_compiler = false
+}
+
 # Generate C++/JavaScript/Java/Python/Dart/Go source files from mojom files. The
 # output files will go under the generated file directory tree with the same
 # path as each input file.
@@ -190,6 +195,13 @@ template("mojom") {
         "-o",
         rebase_path(root_gen_dir),
       ]
+
+      # TODO(azani): Remove when the switch to the new compiler is complete.
+      if (use_new_mojom_compiler) {
+        args += [ "--compiler-version=2" ]
+      } else {
+        args += [ "--compiler-version=1" ]
+      }
 
       if (defined(invoker.import_dirs)) {
         foreach(import_dir, invoker.import_dirs) {
