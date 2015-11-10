@@ -29,7 +29,7 @@ def _ParseCLIArgs():
                       help='Location of the parser output. "-" for stdin. '
                       '(default "-")', default='-')
   parser.add_argument('-p', '--python-bindings-dir', dest='py_bindings_dir',
-                      default='out/Debug/python',
+                      default=None,
                       help='Location of the compiled python bindings')
   parser.add_argument("-o", "--output-dir", dest="output_dir", default=".",
                       help="output directory for generated files")
@@ -47,7 +47,11 @@ def _FixPath():
   # We need to parse command line args before imports so we can find out where
   # the python bindings are located and add them to sys.path.
   args, _ = _ParseCLIArgs()
-  sys.path.insert(0, args.py_bindings_dir)
+  py_bindings_dir = args.py_bindings_dir
+  if not py_bindings_dir:
+    py_bindings_dir = os.path.join(os.path.dirname(args.output_dir), "python")
+  sys.path.insert(0, py_bindings_dir)
+
   sys.path.insert(0, os.path.join(os.path.dirname(
       os.path.abspath(__file__)), "pylib"))
 
@@ -55,7 +59,7 @@ def _FixPath():
 _FixPath()
 
 
-from generated import mojom_files_mojom
+from mojom.generate.generated import mojom_files_mojom
 from mojom.generate import mojom_translator
 from mojo_bindings import serialization
 

@@ -73,7 +73,8 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
   else:
     # By default the python bindings are expected to be under the output
     # directory.
-    cmd_args["--python-bindings-dir"] = os.path.join(args.output_dir, "python")
+    cmd_args["--python-bindings-dir"] = os.path.join(
+        os.path.dirname(args.output_dir), "python")
 
   for name, value in cmd_args.iteritems():
     cmd.extend([name, value])
@@ -82,7 +83,7 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
   # run_code_generators.py and look for GENERATOR_PREFIX for more information.
   cmd.extend(remaining_args)
 
-  process = subprocess.Popen(cmd)
+  process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
   process.communicate(serialized_file_graph)
   return process.wait()
 
