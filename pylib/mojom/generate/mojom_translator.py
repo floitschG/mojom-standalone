@@ -318,8 +318,11 @@ class FileTranslator(object):
       if mojom.decl_data.source_file_info.file_name == self._file_name:
         module_type.module = self._module
       else:
-        module_type.imported_from = self._imports[
+        imported_from = self._imports[
             mojom.decl_data.source_file_info.file_name]
+        module_type.imported_from = imported_from
+        module_type.module = imported_from['module']
+
 
   def OrdinalFromMojom(self, mojom):
     """Extracts the declared ordinal from a mojom StructField or UnionField.
@@ -620,6 +623,10 @@ class FileTranslator(object):
     # type (say, a struct with a field of its own type).
     self._type_cache[type_key] = module_type
     from_mojom(module_type, mojom_type)
+
+    # module.py expects the spec of user defined types to be set when
+    # constructing map and array types, but the value appears unimportant.
+    module_type.spec = 'dummyspec'
 
     return module_type
 

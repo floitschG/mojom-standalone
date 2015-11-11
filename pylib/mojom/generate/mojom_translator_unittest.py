@@ -356,7 +356,8 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
           type_reference=mojom_types_mojom.TypeReference(
             type_key=type_key)))
 
-    self.assertIsNone(struct.module)
+    self.assertEquals(
+        translator._imports['root/c.mojom']['module'], struct.module)
     self.assertEquals(translator._imports['root/c.mojom'], struct.imported_from)
 
   def test_interface(self):

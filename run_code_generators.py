@@ -129,6 +129,8 @@ def FixModulePath(module, src_root_path):
     abs_root: {str} absolute path to the root of the source tree.
   """
   module.path = os.path.relpath(module.path, src_root_path)
+  if not hasattr(module, 'imports'):
+    return
   for import_dict in module.imports:
     FixModulePath(import_dict['module'], src_root_path)
 
