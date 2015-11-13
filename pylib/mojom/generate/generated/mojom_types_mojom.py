@@ -216,6 +216,7 @@ class DeclarationData(object):
       _descriptor.SingleFieldGroup('declaration_order', _descriptor.TYPE_INT32, 5, 0, default_value=-1),
       _descriptor.SingleFieldGroup('source_file_info', _descriptor.StructType(lambda: SourceFileInfo, nullable=True), 6, 0),
       _descriptor.SingleFieldGroup('contained_declarations', _descriptor.StructType(lambda: ContainedDeclarations, nullable=True), 7, 0),
+      _descriptor.SingleFieldGroup('container_type_key', _descriptor.TYPE_NULLABLE_STRING, 8, 0),
     ],
   }
 
