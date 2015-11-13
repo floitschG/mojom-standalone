@@ -42,6 +42,8 @@ class FileTranslator(object):
     """
     assert isinstance(graph, mojom_files_mojom.MojomFileGraph)
     self._type_cache = {}
+    self._value_cache = {}
+    self._constant_cache = {}
     self._graph = graph
     self._file_name = file_name
     self._types = {}
@@ -70,8 +72,7 @@ class FileTranslator(object):
     if mojom_file.declared_mojom_objects:
       if mojom_file.declared_mojom_objects.top_level_constants:
         mod.constants = [
-            self.ConstFromMojom(
-                self._graph.resolved_values[key].declared_constant, None)
+            self.ConstantFromValueKey(key)
             for key in mojom_file.declared_mojom_objects.top_level_constants]
 
       user_defined_types = ['interfaces', 'structs', 'unions']
@@ -180,7 +181,7 @@ class FileTranslator(object):
           mojom_types_mojom.DefaultFieldValue.Tags.default_keyword):
         struct_field.default = 'default'
       else:
-        struct_field.default = self.EvalValue(
+        struct_field.default = self.ValueFromMojom(
             mojom_field.default_value.value)
 
     return struct_field
@@ -234,9 +235,8 @@ class FileTranslator(object):
 
     if contained_declarations.constants:
       for const_key in contained_declarations.constants:
-        const = self.ConstFromMojom(
-            self._graph.resolved_values[const_key].declared_constant,
-            parent_kind)
+        const = self.ConstantFromValueKey(const_key)
+        const.parent_kind = parent_kind
         parent_kind.constants.append(const)
 
   def EnumFromMojom(self, enum, mojom_type):
@@ -253,28 +253,20 @@ class FileTranslator(object):
     enum.fields = [self.EnumFieldFromMojom(value)
         for value in mojom_enum.values]
 
-  def EnumFieldFromMojom(self, mojom_field):
+  def EnumFieldFromMojom(self, mojom_enum_value):
     """Translates an mojom_types_mojom.EnumValue to a module.EnumField.
 
-    mojom_field: {mojom_types_mojom.EnumValue} to be translated.
+    mojom_enum_value: {mojom_types_mojom.EnumValue} to be translated.
 
     Returns:
-      {module.EnumField} translated from mojom_field.
+      {module.EnumField} translated from mojom_enum_value.
     """
     field = module.EnumField()
-    field.name = mojom_field.decl_data.short_name
-    field.attributes = self.AttributesFromMojom(mojom_field)
-    field.numeric_value = mojom_field.int_value
-    if mojom_field.initializer_value is not None:
-      # TODO(rudominer) resolved_numeric_value will always be equal to
-      # field.numeric_value above, once mojom_field.int_value is implemented.
-      resolved_numeric_value = self.EvalValue(mojom_field.initializer_value)
-      assert isinstance(resolved_numeric_value, int)
-      # TODO(rudominer) Below we set field.value to a literal value even if in
-      # the .mojom file the enum value initializer  was a value reference.
-      # Thus we are hiding some information from the code generators. We may
-      # wish to revisit this decision.
-      field.value = str(resolved_numeric_value)
+    field.name = mojom_enum_value.decl_data.short_name
+    field.attributes = self.AttributesFromMojom(mojom_enum_value)
+    field.numeric_value = mojom_enum_value.int_value
+    if mojom_enum_value.initializer_value is not None:
+      field.value = self.ValueFromMojom(mojom_enum_value.initializer_value)
 
     return field
 
@@ -376,39 +368,61 @@ class FileTranslator(object):
           for param in mojom_method.response_params.fields]
     return method
 
-  def ConstFromMojom(self, mojom_const, parent_kind):
-    """Translates a mojom_types_mojom.DeclaredConstant to a module.Constant.
+  def ConstantFromValueKey(self, value_key):
+    """Takes a value key into a graph.resolved_values referring to a constant
+    and returns the module equivalent.
 
     Args:
+      value_key: {str} the value key referring to the value to be returned.
+
+    Returns:
+      {module.Constant} translated.
+    """
+    if value_key in self._constant_cache:
+      return self._constant_cache[value_key]
+
+    mojom_const = self._graph.resolved_values[value_key].declared_constant
+    const = module.Constant()
+    self._constant_cache[value_key] = const
+
+    self.ConstantFromMojom(const, mojom_const)
+    return const
+
+  def ConstantFromMojom(self, const, mojom_const):
+    """Populates a module.Constant based on a DeclaredConstant.
+
+    Args:
+      const: {module.Constant} to be populated.
       mojom_const: {mojom_types_mojom.DeclaredConstant} to be translated.
-      parent_kind: {module.Struct|Interface} if the constant is nested in a
-        struct or interface.
 
     Returns:
       {module.Constant} translated from mojom_const.
     """
-    const = module.Constant()
     const.name = mojom_const.decl_data.short_name
     const.kind = self.KindFromMojom(mojom_const.type)
-    const.value = self.EvalValue(mojom_const.value)
-    const.parent_kind = parent_kind
-    return const
+    const.value = self.ValueFromMojom(mojom_const.value)
+    # TODO(azani): Set const.parent_kind.
 
-  def EvalValue(self, value):
-    """Evaluates a mojom_types_mojom.Value.
+  def ValueFromMojom(self, value):
+    """Translates a mojom_types_mojom.Value.
 
     Args:
-      value: {mojom_types_mojom.Value} to be evaluated.
+      value: {mojom_types_mojom.Value} to be translated.
 
     Returns:
-      {int|float|str|bool|None} the literal value if value is a LiteralValue,
-      the string name of the built-in constant if value is a
-      BuiltinConstantValue, the result of invoking EvalValue() on the
-      resolved concrete value of the user value reference if value is a
-      UserValueReference and its concrete value is not None, or else None
+      {str|module.BuiltinValue|module.NamedValue} translated from the passed in
+      mojom_value.
+      If value is a literal value, a string is returned. If the value is itself
+        a string, the returned string is quoted. Otherwise it is a string
+        representation of the literal value.
+      If value is a built-in value, a module.BuiltinValue is returned.
+      If value is a user defined reference, a module.NamedValue is returned.
     """
     if value.tag == mojom_types_mojom.Value.Tags.literal_value:
-      return value.literal_value.data
+      if (value.literal_value.tag
+          == mojom_types_mojom.LiteralValue.Tags.string_value):
+        return '"%s"' % value.literal_value.data
+      return str(value.literal_value.data)
     elif value.tag == mojom_types_mojom.Value.Tags.builtin_value:
       mojom_to_builtin = {
         mojom_types_mojom.BuiltinConstantValue.DOUBLE_INFINITY:
@@ -426,12 +440,75 @@ class FileTranslator(object):
       return module.BuiltinValue(mojom_to_builtin[value.builtin_value])
 
     assert value.tag == mojom_types_mojom.Value.Tags.user_value_reference
-    concrete_value = value.user_value_reference.resolved_concrete_value
-    if concrete_value == None:
-      return None
-    assert (concrete_value.tag !=
-        mojom_types_mojom.Value.Tags.user_value_reference)
-    return self.EvalValue(concrete_value)
+    return self.UserDefinedFromValueKey(value.user_value_reference.value_key)
+
+  def UserDefinedFromValueKey(self, value_key):
+    """Takes a value key into graph.resolved_values and returns the module
+    equivalent.
+
+    Args:
+      value_key: {str} the value key referring to the value to be returned.
+
+    Returns:
+      {module.EnumValue|module.ConstantValue} translated.
+    """
+    if value_key in self._value_cache:
+      return self._value_cache[value_key]
+
+    value = self._graph.resolved_values[value_key]
+    if value.tag == mojom_types_mojom.UserDefinedValue.Tags.enum_value:
+      return self.EnumValueFromMojom(value.enum_value)
+    return self.ConstantValueFromValueKey(value_key)
+
+  def ConstantValueFromValueKey(self, value_key):
+    """Takes a value key into graph.resolved_values referring to a declared
+    constant and returns the module equivalent.
+
+    Args:
+      value_key: {str} the value key referring to the value to be returned.
+
+    Returns:
+      {module.ConstantValue} translated.
+    """
+    const_value = module.ConstantValue()
+    self._value_cache[value_key] = const_value
+
+    const = self.ConstantFromValueKey(value_key)
+    const_value.constant = const
+    const_value.name = const.name
+    const_value.parent_kind = const.parent_kind
+    self.PopulateModuleOrImportedFrom(const_value,
+        self._graph.resolved_values[value_key].declared_constant)
+    const_value.namespace = const_value.module.namespace
+    return const_value
+
+  def EnumValueFromMojom(self, mojom_enum_value):
+    """Translates an mojom_types_mojom.EnumValue to a module.EnumValue.
+
+    mojom_enum_value: {mojom_types_mojom.EnumValue} to be translated.
+
+    Returns:
+      {module.EnumValue} translated from mojom_enum_value.
+    """
+    enum_type_key = mojom_enum_value.enum_type_key
+    name = mojom_enum_value.decl_data.short_name
+    value_key = (enum_type_key, name)
+    if value_key in self._value_cache:
+      return self._value_cache[value_key]
+
+    # We need to create and cache the EnumValue object just in case later calls
+    # require the creation of that same EnumValue object.
+    enum_value = module.EnumValue()
+    self._value_cache[value_key] = enum_value
+
+    enum = self.UserDefinedFromTypeKey(enum_type_key)
+    enum_value.enum = enum
+    self.PopulateModuleOrImportedFrom(enum_value, mojom_enum_value)
+    enum_value.namespace = enum_value.module.namespace
+    enum_value.parent_kind = enum.parent_kind
+    enum_value.name = name
+
+    return enum_value
 
   def KindFromMojom(self, mojom_type):
     """Translates a mojom_types_mojom.Type to its equivalent module type.

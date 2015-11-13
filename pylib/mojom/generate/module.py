@@ -134,9 +134,10 @@ ATTRIBUTE_MIN_VERSION = 'MinVersion'
 
 
 class NamedValue(object):
-  def __init__(self, module, parent_kind, name):
+  def __init__(self, module=None, parent_kind=None, name=None):
     self.module = module
-    self.namespace = module.namespace
+    if module:
+      self.namespace = module.namespace
     self.parent_kind = parent_kind
     self.name = name
     self.imported_from = None
@@ -153,14 +154,20 @@ class BuiltinValue(object):
 
 
 class ConstantValue(NamedValue):
-  def __init__(self, module, parent_kind, constant):
-    NamedValue.__init__(self, module, parent_kind, constant.name)
+  def __init__(self, module=None, parent_kind=None, constant=None):
+    if constant:
+      NamedValue.__init__(self, module, parent_kind, constant.name)
+    else:
+      NamedValue.__init__(self, module, parent_kind)
     self.constant = constant
 
 
 class EnumValue(NamedValue):
-  def __init__(self, module, enum, field):
-    NamedValue.__init__(self, module, enum.parent_kind, field.name)
+  def __init__(self, module=None, enum=None, field=None):
+    if enum and field:
+      NamedValue.__init__(self, module, enum.parent_kind, field.name)
+    else:
+      NamedValue.__init__(self, module)
     self.enum = enum
 
   def GetSpec(self):
