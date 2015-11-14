@@ -197,28 +197,36 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals('15.0', struct.fields[1].default)
 
   def test_constant(self):
+    file_name = 'a.mojom'
     graph = mojom_files_mojom.MojomFileGraph()
 
     mojom_const = mojom_types_mojom.DeclaredConstant()
     mojom_const.decl_data = mojom_types_mojom.DeclarationData(
-        short_name='foo')
+        short_name='foo', container_type_key='struct_key')
     mojom_const.type = mojom_types_mojom.Type(
         simple_type=mojom_types_mojom.SimpleType.INT64)
     mojom_const.value = mojom_types_mojom.Value()
     mojom_const.value.literal_value = mojom_types_mojom.LiteralValue(
         int64_value=20)
 
-    struct = module.Struct()
+    mojom_struct = mojom_types_mojom.MojomStruct(
+        fields=[],
+        decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AStruct',
+          source_file_info =mojom_types_mojom.SourceFileInfo(
+            file_name=file_name)))
+    graph.resolved_types = {'struct_key': mojom_types_mojom.UserDefinedType(
+      struct_type=mojom_struct)}
+
     const = module.Constant()
-    mojom_translator.FileTranslator(graph, None).ConstantFromMojom(
-        const, mojom_const)
+    translator = mojom_translator.FileTranslator(graph, file_name)
+    translator.ConstantFromMojom(const, mojom_const)
 
     self.assertEquals(mojom_const.decl_data.short_name, const.name)
     self.assertEquals(module.INT64, const.kind)
     self.assertEquals('20', const.value)
-    # TODO(azani): Re-test that property when DeclaredConstant refers to
-    # its parent type key.
-    #self.assertEquals(struct, const.parent_kind)
+    self.assertEquals(translator.UserDefinedFromTypeKey('struct_key'),
+        const.parent_kind)
 
   def test_enum(self):
     file_name = 'a.mojom'
@@ -259,6 +267,33 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         enum.fields[0].numeric_value)
     self.assertEquals(value2.int_value,
         enum.fields[1].numeric_value)
+
+  def test_child_enum(self):
+    file_name = 'a.mojom'
+    mojom_enum = mojom_types_mojom.MojomEnum()
+    mojom_enum.decl_data = mojom_types_mojom.DeclarationData(
+        short_name='AnEnum',
+        source_file_info=mojom_types_mojom.SourceFileInfo(file_name=file_name),
+        container_type_key='struct_key')
+    mojom_enum.values = []
+
+    graph = mojom_files_mojom.MojomFileGraph()
+    mojom_struct = mojom_types_mojom.MojomStruct(
+        fields=[],
+        decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AStruct',
+          source_file_info =mojom_types_mojom.SourceFileInfo(
+            file_name=file_name)))
+    graph.resolved_types = {'struct_key': mojom_types_mojom.UserDefinedType(
+      struct_type=mojom_struct)}
+
+    enum = module.Enum()
+    translator = mojom_translator.FileTranslator(graph, file_name)
+    translator.EnumFromMojom(
+        enum, mojom_types_mojom.UserDefinedType(enum_type=mojom_enum))
+
+    self.assertEquals('AStruct.' + mojom_enum.decl_data.short_name, enum.name)
+    self.assertEquals(len(mojom_enum.values), len(enum.fields))
 
   def test_unions(self):
     file_name = 'a.mojom'
@@ -463,12 +498,15 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         decl_data=mojom_types_mojom.DeclarationData(
           short_name='AnEnum',
           source_file_info=mojom_types_mojom.SourceFileInfo(
-            file_name=file_name)))
+            file_name=file_name),
+          container_type_key='parent_key'))
     graph.resolved_types = {
         'enum_key': mojom_types_mojom.UserDefinedType(enum_type=mojom_enum)}
 
     mojom_const = mojom_types_mojom.DeclaredConstant(
-        decl_data=mojom_types_mojom.DeclarationData(short_name='AConst'),
+        decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AConst',
+          container_type_key='parent_key'),
         type=mojom_types_mojom.Type(
           simple_type=mojom_types_mojom.SimpleType.INT64),
         value=mojom_types_mojom.Value(
@@ -483,6 +521,7 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
 
     translator = mojom_translator.FileTranslator(graph, file_name)
     struct = module.Struct(name='parent')
+    translator._type_cache['parent_key'] = struct
     translator.PopulateContainedDeclarationsFromMojom(
         struct, contained_declarations)
 

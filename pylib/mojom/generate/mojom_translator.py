@@ -229,14 +229,11 @@ class FileTranslator(object):
     if contained_declarations.enums:
       for enum_key in contained_declarations.enums:
         enum = self.UserDefinedFromTypeKey(enum_key)
-        enum.name = '%s.%s' % (parent_kind.name, enum.name)
-        enum.parent_kind = parent_kind
         parent_kind.enums.append(enum)
 
     if contained_declarations.constants:
       for const_key in contained_declarations.constants:
         const = self.ConstantFromValueKey(const_key)
-        const.parent_kind = parent_kind
         parent_kind.constants.append(const)
 
   def EnumFromMojom(self, enum, mojom_type):
@@ -250,6 +247,11 @@ class FileTranslator(object):
     assert mojom_type.tag == mojom_types_mojom.UserDefinedType.Tags.enum_type
     mojom_enum = mojom_type.enum_type
     self.PopulateUserDefinedType(enum, mojom_enum)
+    if mojom_enum.decl_data.container_type_key:
+      parent_kind = self.UserDefinedFromTypeKey(
+          mojom_enum.decl_data.container_type_key)
+      enum.name = '%s.%s' % (parent_kind.name, enum.name)
+      enum.parent_kind = parent_kind
     enum.fields = [self.EnumFieldFromMojom(value)
         for value in mojom_enum.values]
 
@@ -401,7 +403,10 @@ class FileTranslator(object):
     const.name = mojom_const.decl_data.short_name
     const.kind = self.KindFromMojom(mojom_const.type)
     const.value = self.ValueFromMojom(mojom_const.value)
-    # TODO(azani): Set const.parent_kind.
+    const.parent_kind = None
+    if mojom_const.decl_data.container_type_key:
+      const.parent_kind = self.UserDefinedFromTypeKey(
+          mojom_const.decl_data.container_type_key)
 
   def ValueFromMojom(self, value):
     """Translates a mojom_types_mojom.Value.
