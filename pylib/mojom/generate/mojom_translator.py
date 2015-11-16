@@ -250,7 +250,6 @@ class FileTranslator(object):
     if mojom_enum.decl_data.container_type_key:
       parent_kind = self.UserDefinedFromTypeKey(
           mojom_enum.decl_data.container_type_key)
-      enum.name = '%s.%s' % (parent_kind.name, enum.name)
       enum.parent_kind = parent_kind
     enum.fields = [self.EnumFieldFromMojom(value)
         for value in mojom_enum.values]

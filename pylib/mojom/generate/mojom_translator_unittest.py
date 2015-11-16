@@ -292,7 +292,7 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     translator.EnumFromMojom(
         enum, mojom_types_mojom.UserDefinedType(enum_type=mojom_enum))
 
-    self.assertEquals('AStruct.' + mojom_enum.decl_data.short_name, enum.name)
+    self.assertEquals(mojom_enum.decl_data.short_name, enum.name)
     self.assertEquals(len(mojom_enum.values), len(enum.fields))
 
   def test_unions(self):
@@ -526,7 +526,7 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         struct, contained_declarations)
 
     self.assertEquals(
-        'parent.' + mojom_enum.decl_data.short_name, struct.enums[0].name)
+        mojom_enum.decl_data.short_name, struct.enums[0].name)
     self.assertEquals(struct, struct.enums[0].parent_kind)
     self.assertEquals(
         mojom_const.decl_data.short_name, struct.constants[0].name)
