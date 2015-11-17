@@ -446,10 +446,22 @@ class Generator(generator.Generator):
     elements = self.module.namespace.split('.')
     elements.append("%s.dart" % self.module.name)
 
-    package_name = GetPackage(self.module)
     lib_module = self.GenerateLibModule(args)
-    pkg_path = os.path.join("dart-pkg", package_name, "lib", *elements)
-    self.Write(lib_module, pkg_path)
+
+    # List of packages with checked in bindings.
+    # TODO(johnmccutchan): Stop generating bindings as part of build system
+    # and then remove this.
+    packages_with_checked_in_bindings = [
+      'mojo',
+      'mojo_apptest',
+      'mojo_services',
+      'mojo_sdk'
+      'mojom'
+    ]
+    package_name = GetPackage(self.module)
+    if not (package_name in packages_with_checked_in_bindings):
+      pkg_path = os.path.join("dart-pkg", package_name, "lib", *elements)
+      self.Write(lib_module, pkg_path)
 
     gen_path = os.path.join("dart-gen", package_name, "lib", *elements)
     full_gen_path = os.path.join(self.output_dir, gen_path)
