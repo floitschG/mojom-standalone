@@ -201,7 +201,11 @@ template("mojom") {
 
       # TODO(azani): Remove when the switch to the new compiler is complete.
       if (use_new_mojom_compiler) {
-        args += [ "--compiler-version=2" ]
+        args += [
+          "--compiler-version=2",
+          "--python-bindings-dir",
+          rebase_path("$root_build_dir/python"),
+        ]
       } else {
         args += [ "--compiler-version=1" ]
       }
