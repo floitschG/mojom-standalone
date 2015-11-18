@@ -487,7 +487,7 @@ class Generator(generator.Generator):
 
   def GetImports(self, args):
     used_names = set()
-    for each_import in self.module.imports:
+    for each_import in self.module.transitive_imports:
       simple_name = each_import["module_name"].split(".")[0]
 
       # Since each import is assigned a library in Dart, they need to have

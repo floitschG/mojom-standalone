@@ -390,7 +390,7 @@ class Generator(generator.Generator):
 
   def GetImports(self):
     used_names = set()
-    for each_import in self.module.imports:
+    for each_import in self.module.transitive_imports:
       simple_name = each_import["module_name"].split(".")[0]
 
       # Since each import is assigned a variable in JS, they need to have unique
@@ -408,7 +408,7 @@ class Generator(generator.Generator):
 
   def GetImportedInterfaces(self):
     interface_to_import = {};
-    for each_import in self.module.imports:
+    for each_import in self.module.transitive_imports:
       for each_interface in each_import["module"].interfaces:
         name = each_interface.name
         interface_to_import[name] = each_import["unique_name"] + "." + name

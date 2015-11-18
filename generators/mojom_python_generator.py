@@ -235,7 +235,7 @@ class Generator(generator.Generator):
                self.MatchMojomFilePath('%s.py' % import_path))
 
   def GetImports(self):
-    for each in self.module.imports:
+    for each in self.module.transitive_imports:
       each['python_module'] = MojomToPythonImport(each['module_name'])
     return self.module.imports
 

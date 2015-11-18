@@ -48,7 +48,7 @@ class FileTranslator(object):
     self._file_name = file_name
     self._types = {}
     self._module = module.Module()
-    self._imports = {}
+    self._transitive_imports = {}
 
   def Translate(self):
     """Translates the file specified in the constructor.
@@ -62,12 +62,11 @@ class FileTranslator(object):
     self.PopulateModuleMetadata(mod, mojom_file)
 
     mod.imports = []
+    self._transitive_imports = self.GetTransitiveImports(mojom_file)
+    mod.transitive_imports = self._transitive_imports.values()
     if mojom_file.imports:
-      mod.imports = [self.ImportFromMojom(imp) for imp in mojom_file.imports]
-    # When translating an imported type, its SourceFileInfo.file_name is a key
-    # into self._imports. The value is the module from which the type was
-    # imported.
-    self._imports = {imp['module'].path: imp for imp in mod.imports}
+      mod.imports = [
+          self._transitive_imports[imp] for imp in mojom_file.imports]
 
     if mojom_file.declared_mojom_objects:
       if mojom_file.declared_mojom_objects.top_level_constants:
@@ -101,6 +100,38 @@ class FileTranslator(object):
     mod.namespace = mojom_file.module_namespace
     if mojom_file.attributes:
       mod.attributes = {attr.key: attr.value for attr in mojom_file.attributes}
+
+  def GetTransitiveImports(self, mojom_file):
+    """Gets a mojom file's transitive imports.
+
+    Args:
+      mojom_file: {mojom_files.MojomFile} the mojom file whose imports have to
+        be found.
+
+    Returns:
+      {dict} The key is the file_name which is an index into self._graph.files
+      and is referenced in the SourceFileInfo.file_name of imported types.
+      The value is a dictionary as returned by ImportFromMojom.
+    """
+    if not mojom_file.imports:
+      return {}
+    to_be_processed = set(mojom_file.imports)
+    processed = set()
+    transitive_imports = {}
+
+    while to_be_processed:
+      import_name = to_be_processed.pop()
+      processed.add(import_name)
+
+      import_dict = self.ImportFromMojom(import_name)
+
+      transitive_imports[import_dict['module'].path] = import_dict
+
+      import_file = self._graph.files[import_name]
+      if import_file.imports:
+        to_be_processed.update(set(import_file.imports) - processed)
+
+    return transitive_imports
 
   def ImportFromMojom(self, import_name):
     """Builds a dict representing an import.
@@ -311,7 +342,7 @@ class FileTranslator(object):
       if mojom.decl_data.source_file_info.file_name == self._file_name:
         module_type.module = self._module
       else:
-        imported_from = self._imports[
+        imported_from = self._transitive_imports[
             mojom.decl_data.source_file_info.file_name]
         module_type.imported_from = imported_from
         module_type.module = imported_from['module']

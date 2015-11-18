@@ -168,6 +168,24 @@ def KindFromImport(original_kind, imported_from):
   kind.imported_from = imported_from
   return kind
 
+def ComputeTransitiveImports(imports):
+  """Computes the list of transitive imports of a module based on that modules'
+  list of direct imports."""
+  to_process = {imp['module'].path: imp for imp in imports}
+  processed = set()
+  transitive_imports = []
+
+  while to_process:
+    _, imp = to_process.popitem()
+    transitive_imports.append(imp)
+    processed.add(imp['module'].path)
+
+    for sub_imp in imp['module'].imports:
+      if sub_imp['module'].path not in processed:
+        to_process[sub_imp['module'].path] = sub_imp
+
+  return transitive_imports
+
 def ImportFromData(module, data):
   """Adds to the pool of available kinds in the current module, the list of
   kinds provided by the imported module. Also creates a dict describing
@@ -452,6 +470,7 @@ def ModuleFromData(data):
   module.imports = map(
       lambda import_data: ImportFromData(module, import_data),
       data['imports'])
+  module.transitive_imports = ComputeTransitiveImports(module.imports)
   module.attributes = data.get('attributes')
 
   # First pass collects kinds.

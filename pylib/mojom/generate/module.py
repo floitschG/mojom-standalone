@@ -440,6 +440,10 @@ class Module(object):
     self.constants = []
     self.kinds = {}
     self.attributes = attributes
+    self.imports = []
+    # Transitive imports should contain all of the module's imports plus
+    # all of their imports recursively.
+    self.transitive_imports = []
 
   def AddInterface(self, name, attributes=None):
     interface = Interface(name, self, attributes)

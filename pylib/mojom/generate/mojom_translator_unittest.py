@@ -46,16 +46,22 @@ class TestTranslateFile(unittest.TestCase):
 
     file_name = 'root/f.mojom'
     imported_file_name = 'other/a.mojom'
+    second_level_imported_file_name = 'something/other.mojom'
     mojom_file = mojom_files_mojom.MojomFile(
         file_name=file_name,
         module_namespace='somens',
         imports=[imported_file_name])
     imported_file = mojom_files_mojom.MojomFile(
         file_name=imported_file_name,
+        module_namespace='somens',
+        imports=[second_level_imported_file_name])
+    second_level_imported_file = mojom_files_mojom.MojomFile(
+        file_name=second_level_imported_file_name,
         module_namespace='somens')
     graph.files = {
         file_name: mojom_file,
         imported_file_name: imported_file,
+        second_level_imported_file_name: second_level_imported_file
         }
 
     mojom_interface = mojom_types_mojom.MojomInterface(
@@ -119,10 +125,17 @@ class TestTranslateFile(unittest.TestCase):
     self.assertEquals(mojom_file.file_name, mod.path)
     self.assertEquals(mojom_file.module_namespace, mod.namespace)
 
+    self.assertEquals(1, len(mod.imports))
     self.assertEquals('a.mojom', mod.imports[0]['module_name'])
     self.assertEquals(imported_file.module_namespace,
         mod.imports[0]['namespace'])
     self.assertEquals(imported_file.file_name, mod.imports[0]['module'].path)
+
+    self.assertEquals(2, len(mod.transitive_imports))
+    transitive_imports_paths = [imp['module'].path
+        for imp in mod.transitive_imports]
+    self.assertIn(imported_file_name, transitive_imports_paths)
+    self.assertIn(second_level_imported_file_name, transitive_imports_paths)
 
     self.assertEquals(mojom_interface.interface_name, mod.interfaces[0].name)
     self.assertEquals(mojom_struct.decl_data.short_name, mod.structs[0].name)
@@ -395,8 +408,9 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
             type_key=type_key)))
 
     self.assertEquals(
-        translator._imports['root/c.mojom']['module'], struct.module)
-    self.assertEquals(translator._imports['root/c.mojom'], struct.imported_from)
+        translator._transitive_imports['root/c.mojom']['module'], struct.module)
+    self.assertEquals(
+        translator._transitive_imports['root/c.mojom'], struct.imported_from)
 
   def test_interface(self):
     file_name = 'a.mojom'
