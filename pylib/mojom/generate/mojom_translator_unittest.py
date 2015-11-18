@@ -157,6 +157,53 @@ class TestTranslateFile(unittest.TestCase):
 
     self.assertEquals([], mod.imports)
 
+@unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
+class TestUserDefinedFromTypeRef(unittest.TestCase):
+
+  def do_interface_test(self, nullable, interface_request):
+    # Build a MojomInterface
+    file_name = 'a.mojom'
+    mojom_interface = mojom_types_mojom.MojomInterface(
+        decl_data=mojom_types_mojom.DeclarationData(
+          source_file_info=mojom_types_mojom.SourceFileInfo(
+            file_name=file_name)),
+        interface_name='AnInterface')
+    mojom_interface.methods={}
+
+    # Register the MojomInterface in a MojomFileGraph
+    graph = mojom_files_mojom.MojomFileGraph()
+    type_key = 'some_type_key'
+    graph.resolved_types = {
+      type_key: mojom_types_mojom.UserDefinedType(
+        interface_type=mojom_interface)}
+
+    # Build a reference to the interface.
+    type_ref = mojom_types_mojom.Type(
+        type_reference=mojom_types_mojom.TypeReference(
+            type_key=type_key,
+            nullable=nullable,
+            is_interface_request=interface_request))
+
+    # Construct a translator
+    translator = mojom_translator.FileTranslator(graph, file_name)
+
+    # Translate the MojomInterface referenced by type_ref.
+    interface = translator.UserDefinedFromTypeRef(type_ref)
+
+    # Check the translation
+    if interface_request:
+      self.assertEquals('AnInterface', interface.kind.name)
+    else:
+      self.assertEquals('AnInterface', interface.name)
+    self.assertEquals(nullable, interface.is_nullable)
+    self.assertEquals(interface_request, isinstance(interface,
+        module.InterfaceRequest))
+
+  def test_interfaces(self):
+    self.do_interface_test(False, False)
+    self.do_interface_test(False, True)
+    self.do_interface_test(True, False)
+    self.do_interface_test(True, True)
 
 @unittest.skipUnless(bindings_imported, 'Could not import python bindings.')
 class TestUserDefinedTypeFromMojom(unittest.TestCase):

@@ -676,7 +676,8 @@ class FileTranslator(object):
     return module_map
 
   def UserDefinedFromTypeRef(self, mojom_type):
-    """Translates a user defined type to its module equivalent.
+    """Translates a type reference to the module equivalent of the
+       UserDefinedType that the reference refers to.
 
     Args:
       mojom_type: {mojom_types_mojom.Type} with its type_reference field set to
@@ -687,6 +688,8 @@ class FileTranslator(object):
     """
     type_key = mojom_type.type_reference.type_key
     module_type = self.UserDefinedFromTypeKey(type_key)
+    if mojom_type.type_reference.is_interface_request:
+      module_type = module.InterfaceRequest(module_type)
     if mojom_type.type_reference.nullable:
       return module_type.MakeNullableKind()
     return module_type
@@ -730,15 +733,17 @@ class FileTranslator(object):
         }
     module_type_class, from_mojom = user_defined_types[mojom_type.tag]
     module_type = module_type_class()
+
+    # module.py expects the spec of user defined types to be set when
+    # constructing map, array, and interface request types, but the value
+    # appears unimportant.
+    module_type.spec = 'dummyspec'
+
     # It is necessary to cache the type object before populating it since in
     # the course of populating it, it may be necessary to resolve that same
     # type (say, a struct with a field of its own type).
     self._type_cache[type_key] = module_type
     from_mojom(module_type, mojom_type)
-
-    # module.py expects the spec of user defined types to be set when
-    # constructing map and array types, but the value appears unimportant.
-    module_type.spec = 'dummyspec'
 
     return module_type
 
