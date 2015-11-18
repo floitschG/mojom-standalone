@@ -452,11 +452,12 @@ class Generator(generator.Generator):
     # TODO(johnmccutchan): Stop generating bindings as part of build system
     # and then remove this.
     packages_with_checked_in_bindings = [
+      '_mojo_for_test_only',
       'mojo',
       'mojo_apptest',
       'mojo_services',
-      'mojo_sdk'
-      'mojom'
+      'mojo_sdk',
+      'mojom',
     ]
     package_name = GetPackage(self.module)
     if not (package_name in packages_with_checked_in_bindings):

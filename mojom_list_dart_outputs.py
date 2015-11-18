@@ -19,9 +19,9 @@ from mojom.parse.parser import Parse
 from mojom.parse.translate import Translate
 
 def mojom_path(name, namespace, attributes):
-  package_name = attributes['DartPackage']
-  if package_name == None:
-    package_name = 'mojom'
+  package_name = 'mojom'
+  if attributes and attributes.get('DartPackage'):
+    package_name = attributes['DartPackage']
   elements = [package_name, 'lib']
   elements.extend(namespace.split('.'))
   elements.append("%s.dart" % name)
@@ -48,9 +48,9 @@ def process_mojom(path_to_mojom):
     sys.exit(2)
 
   mojom = Translate(tree, name)
-
   # Output path
-  print(mojom_path(mojom['name'], mojom['namespace'], mojom['attributes']))
+  attributes = mojom.get('attributes')
+  print(mojom_path(mojom['name'], mojom['namespace'], attributes))
 
 
 def main():
