@@ -447,9 +447,12 @@ class FileTranslator(object):
     Returns:
       {str|module.BuiltinValue|module.NamedValue} translated from the passed in
       mojom_value.
-      If value is a literal value, a string is returned. If the value is itself
-        a string, the returned string is quoted. Otherwise it is a string
-        representation of the literal value.
+      If value is a literal value, a string is returned. If the literal value is
+        a string literal value, the returned string is enclosed in double
+        quotes. If the literal value is a boolean literal value then one of the
+        strings 'true' or 'false' is returned. Otherwise the literal value is a
+        numeric literal value and in this case the returned value is the Python
+        string representation of the numeric value.
       If value is a built-in value, a module.BuiltinValue is returned.
       If value is a user defined reference, a module.NamedValue is returned.
     """
@@ -457,6 +460,10 @@ class FileTranslator(object):
       if (value.literal_value.tag
           == mojom_types_mojom.LiteralValue.Tags.string_value):
         return '"%s"' % value.literal_value.data
+      if (value.literal_value.tag
+          == mojom_types_mojom.LiteralValue.Tags.bool_value):
+        # The strings 'true' and 'false' are used to represent bool literals.
+        return ('%s' % value.literal_value.data).lower()
       return str(value.literal_value.data)
     elif value.tag == mojom_types_mojom.Value.Tags.builtin_value:
       mojom_to_builtin = {

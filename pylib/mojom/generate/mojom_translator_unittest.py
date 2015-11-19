@@ -598,13 +598,19 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
 class TestValueFromMojom(unittest.TestCase):
 
   def test_literal_value(self):
-    mojom = mojom_types_mojom.Value()
-    mojom.literal_value = mojom_types_mojom.LiteralValue(int64_value=20)
+    mojom_int64 = mojom_types_mojom.Value()
+    mojom_int64.literal_value = mojom_types_mojom.LiteralValue(int64_value=20)
+    mojom_bool = mojom_types_mojom.Value()
+    mojom_bool.literal_value = mojom_types_mojom.LiteralValue(bool_value=True)
 
     graph = mojom_files_mojom.MojomFileGraph()
-    const = mojom_translator.FileTranslator(graph, None).ValueFromMojom(mojom)
+    int64_const = mojom_translator.FileTranslator(graph, None).ValueFromMojom(
+        mojom_int64)
+    bool_const = mojom_translator.FileTranslator(graph, None).ValueFromMojom(
+        mojom_bool)
 
-    self.assertEquals('20', const)
+    self.assertEquals('20', int64_const)
+    self.assertEquals('true', bool_const)
 
   def test_builtin_const(self):
     mojom = mojom_types_mojom.Value()
