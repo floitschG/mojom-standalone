@@ -374,6 +374,9 @@ class FileTranslator(object):
         == mojom_types_mojom.UserDefinedType.Tags.interface_type)
     mojom_interface = mojom_type.interface_type
     interface.attributes = self.AttributesFromMojom(mojom_interface)
+    interface.service_name = None
+    if interface.attributes:
+      interface.service_name = interface.attributes.get('ServiceName')
     self.PopulateModuleOrImportedFrom(interface, mojom_interface)
     interface.name = mojom_interface.interface_name
     interface.methods = [self.MethodFromMojom(mojom_method, interface)

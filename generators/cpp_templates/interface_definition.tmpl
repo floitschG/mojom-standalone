@@ -5,7 +5,6 @@
 
 {%- set class_name = interface.name %}
 {%- set proxy_name = interface.name ~ "Proxy" %}
-{%- set namespace_as_string = "%s"|format(namespace|replace(".","::")) %}
 
 {%- macro alloc_params(struct) %}
 {%-   for param in struct.packed.packed_fields_in_ordinal_order %}
@@ -31,7 +30,9 @@ p_{{param.name}}
 {%- endmacro %}
 
 {#--- Begin #}
-MOJO_STATIC_CONST_MEMBER_DEFINITION const char {{class_name}}::Name_[] = "{{namespace_as_string}}::{{class_name}}";
+{%- if interface.service_name %}
+MOJO_STATIC_CONST_MEMBER_DEFINITION const char {{class_name}}::Name_[] = "{{interface.service_name}}";
+{%- endif %}
 MOJO_STATIC_CONST_MEMBER_DEFINITION const uint32_t {{class_name}}::Version_;
 
 {#--- Constants #}

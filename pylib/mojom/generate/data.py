@@ -358,6 +358,9 @@ def InterfaceFromData(module, data):
   # Stash methods data here temporarily.
   interface.methods_data = data['methods']
   interface.attributes = data.get('attributes')
+  interface.service_name = None
+  if interface.attributes:
+    interface.service_name = interface.attributes.get('ServiceName')
   return interface
 
 def EnumFieldFromData(module, enum, data, parent_kind):
