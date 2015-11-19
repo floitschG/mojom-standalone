@@ -226,11 +226,11 @@ class {{interface|name}}Stub extends bindings.Stub {
       {{param.kind|dart_type}} {{param|name}}{% if not loop.last %}, {% endif %}
     {%- endfor -%}
   ) {
-    var result = new {{response_struct|name}}();
+    var mojo_factory_result = new {{response_struct|name}}();
     {%- for param in method.response_parameters %}
-    result.{{param|name}} = {{param|name}};
+    mojo_factory_result.{{param|name}} = {{param|name}};
     {%- endfor %}
-    return result;
+    return mojo_factory_result;
   }
 {%- endif %}
 {%- endfor %}
