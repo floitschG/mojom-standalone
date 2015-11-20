@@ -51,16 +51,18 @@ org.chromium.mojo.bindings.MessageHeader.MESSAGE_IS_RESPONSE_FLAG
 {%- endmacro -%}
 
 {%- macro manager_class(interface, fully_qualified=False) -%}
-{% if fully_qualified %}org.chromium.mojo.bindings.Interface.{% endif %}Manager<{{interface|name}}, {{interface|name}}.Proxy>
+{% if fully_qualified %}org.chromium.mojo.bindings.Interface.{% endif %}{% if interface.service_name %}Named{% endif %}Manager<{{interface|name}}, {{interface|name}}.Proxy>
 {%- endmacro -%}
 
 {%- macro manager_def(interface) -%}
 public static final {{manager_class(interface, True)}} MANAGER =
         new {{manager_class(interface, True)}}() {
+{% if interface.service_name %}
 
     public String getName() {
-        return "{{namespace|replace(".","::")}}::{{interface.name}}";
+        return "{{interface.service_name}}";
     }
+{% endif %}
 
     public int getVersion() {
       return {{interface.version}};
