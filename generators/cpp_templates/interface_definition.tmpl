@@ -96,10 +96,10 @@ void {{proxy_name}}::{{method.name}}(
   {{struct_macros.get_serialized_size(params_struct, "in_%s")}}
 
 {%- if method.response_parameters != None %}
-  mojo::internal::RequestMessageBuilder builder(
+  mojo::RequestMessageBuilder builder(
       static_cast<uint32_t>({{message_name}}), size);
 {%- else %}
-  mojo::internal::MessageBuilder builder(
+  mojo::MessageBuilder builder(
     static_cast<uint32_t>({{message_name}}), size);
 {%- endif %}
 
@@ -162,7 +162,7 @@ class {{class_name}}_{{method.name}}_ProxyToResponder
 void {{class_name}}_{{method.name}}_ProxyToResponder::Run(
     {{interface_macros.declare_params_as_args("in_", method.response_parameters)}}) const {
   {{struct_macros.get_serialized_size(response_params_struct, "in_%s")}}
-  mojo::internal::ResponseMessageBuilder builder(
+  mojo::ResponseMessageBuilder builder(
       static_cast<uint32_t>({{message_name}}), size, request_id_);
   {{build_message(response_params_struct, params_description)}}
   bool ok = responder_->Accept(builder.message());
