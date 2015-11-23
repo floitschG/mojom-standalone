@@ -475,7 +475,7 @@ class FileTranslator(object):
         mojom_types_mojom.BuiltinConstantValue.DOUBLE_NEGATIVE_INFINITY:
           'double.NEGATIVE_INFINITY',
         mojom_types_mojom.BuiltinConstantValue.DOUBLE_NAN:
-          'double.DOUBLE_NAN',
+          'double.NAN',
         mojom_types_mojom.BuiltinConstantValue.FLOAT_INFINITY:
           'float.INFINITY',
         mojom_types_mojom.BuiltinConstantValue.FLOAT_NEGATIVE_INFINITY:
