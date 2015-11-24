@@ -98,8 +98,11 @@ class FileTranslator(object):
     mod.name = os.path.basename(mojom_file.file_name)
     mod.path = mojom_file.file_name
     mod.namespace = mojom_file.module_namespace
+    # Note that attribute values are typed. That is why we use
+    # attr.value.data directly instead of the string representation of it.
     if mojom_file.attributes:
-      mod.attributes = {attr.key: attr.value for attr in mojom_file.attributes}
+      mod.attributes = {attr.key:
+          attr.value.data for attr in mojom_file.attributes}
 
   def GetTransitiveImports(self, mojom_file):
     """Gets a mojom file's transitive imports.
@@ -314,7 +317,9 @@ class FileTranslator(object):
     if not mojom.decl_data.attributes:
       return None
 
-    return {attr.key: attr.value for attr in mojom.decl_data.attributes}
+    # Note that attribute values are typed. That is why we use
+    # attr.value.data directly instead of the string representation of it.
+    return {attr.key: attr.value.data for attr in mojom.decl_data.attributes}
 
   def PopulateUserDefinedType(self, module_type, mojom):
     """Populates fields that are common among user-defined types.

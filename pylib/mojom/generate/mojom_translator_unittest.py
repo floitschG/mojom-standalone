@@ -392,6 +392,26 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     self.assertEquals(module.DOUBLE, union.fields[1].kind)
     self.assertEquals(11, union.fields[1].ordinal)
 
+  def literal_value(self, x):
+    """Creates a typed literal value containing the value |x|.
+
+    Args:
+      x: A string, int, float or bool value.
+
+    Returns:
+      {mojom_types.LiteralValue} with an appropriately typed value.
+    """
+    if isinstance(x, str):
+      return mojom_types_mojom.LiteralValue(string_value=x)
+    elif isinstance(x, int):
+      return mojom_types_mojom.LiteralValue(int64_value=x)
+    elif isinstance(x, float):
+      return mojom_types_mojom.LiteralValue(double_value=x)
+    elif isinstance(x, bool):
+      return mojom_types_mojom.LiteralValue(bool_value=x)
+    raise Exception("unexpected type(x)=%s" % type(x))
+
+
   def test_attributes(self):
     mojom_enum = mojom_types_mojom.MojomEnum()
     mojom_enum.decl_data = mojom_types_mojom.DeclarationData()
@@ -399,11 +419,14 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         'foo': 'bar',
         'other': 'thing',
         'hello': 'world',
+        'min_version': 2,
+        'pi': 3.14159,
+        'is_happy': True
         }
     mojom_enum.decl_data.attributes = []
     for key, value in gold.iteritems():
       mojom_enum.decl_data.attributes.append(
-          mojom_types_mojom.Attribute(key=key, value=value))
+          mojom_types_mojom.Attribute(key=key, value=self.literal_value(value)))
 
     graph = mojom_files_mojom.MojomFileGraph()
     attributes = mojom_translator.FileTranslator(

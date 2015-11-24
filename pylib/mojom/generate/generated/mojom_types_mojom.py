@@ -204,6 +204,15 @@ class DeclaredConstant(object):
     ],
   }
 
+class Attribute(object):
+  __metaclass__ = _reflection.MojoStructType
+  DESCRIPTOR = {
+    'fields': [
+      _descriptor.SingleFieldGroup('key', _descriptor.TYPE_STRING, 0, 0),
+      _descriptor.SingleFieldGroup('value', _descriptor.UnionType(lambda: LiteralValue), 1, 0),
+    ],
+  }
+
 class DeclarationData(object):
   __metaclass__ = _reflection.MojoStructType
   DESCRIPTOR = {
@@ -236,15 +245,6 @@ class ContainedDeclarations(object):
     'fields': [
       _descriptor.SingleFieldGroup('enums', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 0, 0),
       _descriptor.SingleFieldGroup('constants', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 1, 0),
-    ],
-  }
-
-class Attribute(object):
-  __metaclass__ = _reflection.MojoStructType
-  DESCRIPTOR = {
-    'fields': [
-      _descriptor.SingleFieldGroup('key', _descriptor.TYPE_STRING, 0, 0),
-      _descriptor.SingleFieldGroup('value', _descriptor.TYPE_STRING, 1, 0),
     ],
   }
 
