@@ -204,7 +204,7 @@ template("mojom") {
         args += [
           "--compiler-version=2",
           "--python-bindings-dir",
-          rebase_path("$root_build_dir/python"),
+          rebase_path("$mojo_root/mojo/public/python"),
         ]
       } else {
         args += [ "--compiler-version=1" ]

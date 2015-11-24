@@ -51,6 +51,9 @@ def _FixPath():
   if not py_bindings_dir:
     py_bindings_dir = os.path.join(os.path.dirname(args.output_dir), "python")
   sys.path.insert(0, py_bindings_dir)
+  # In order to use mojom_files_mojom we need to make sure the dummy mojo_system
+  # can be found on the python path.
+  sys.path.insert(0, os.path.join(py_bindings_dir, "dummy_mojo_system"))
 
   sys.path.insert(0, os.path.join(os.path.dirname(
       os.path.abspath(__file__)), "pylib"))

@@ -71,10 +71,8 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
   if args.py_bindings_dir:
     cmd_args["--python-bindings-dir"] = args.py_bindings_dir
   else:
-    # By default the python bindings are expected to be under the output
-    # directory.
     cmd_args["--python-bindings-dir"] = os.path.join(
-        os.path.dirname(args.output_dir), "python")
+        args.depth, "mojo", "public", "python")
 
   for name, value in cmd_args.iteritems():
     cmd.extend([name, value])
