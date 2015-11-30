@@ -112,7 +112,7 @@ class BooleanType(SerializableType):
     return (_ConvertBooleansToByte([value]), [])
 
   def Deserialize(self, value, context):
-    return _ConvertByteToBooleans(value)[0]
+    return _ConvertByteToBooleans(value, 1)[0]
 
 
 class NumericType(SerializableType):
