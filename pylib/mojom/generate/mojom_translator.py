@@ -195,7 +195,7 @@ class FileTranslator(object):
     """
     union_field = module.UnionField()
     self.PopulateCommonFieldValues(union_field, mojom_field)
-    union_field.ordinal = mojom_field.tag
+    union_field.ordinal = self.OrdinalFromMojom(mojom_field)
     return union_field
 
   def StructFieldFromMojom(self, mojom_field):
@@ -244,7 +244,10 @@ class FileTranslator(object):
       field: {module.Field|module.Parameter} to be populated.
       mojom_field: {StructField|UnionField} to be translated.
     """
-    field.name = mojom_field.decl_data.short_name
+    # TODO(rudominer) Some of the code generators check that the type
+    # of field.name is a non-unicode string. If we change this we can
+    # remove the str() below.
+    field.name = str(mojom_field.decl_data.short_name)
     field.kind = self.KindFromMojom(mojom_field.type)
     field.attributes = self.AttributesFromMojom(mojom_field)
 
@@ -459,7 +462,7 @@ class FileTranslator(object):
         a string literal value, the returned string is enclosed in double
         quotes. If the literal value is a boolean literal value then one of the
         strings 'true' or 'false' is returned. Otherwise the literal value is a
-        numeric literal value and in this case the returned value is the Python
+        numeric literal value and in this case the returned value is a Python
         string representation of the numeric value.
       If value is a built-in value, a module.BuiltinValue is returned.
       If value is a user defined reference, a module.NamedValue is returned.
@@ -472,6 +475,13 @@ class FileTranslator(object):
           == mojom_types_mojom.LiteralValue.Tags.bool_value):
         # The strings 'true' and 'false' are used to represent bool literals.
         return ('%s' % value.literal_value.data).lower()
+      elif (value.literal_value.tag
+          == mojom_types_mojom.LiteralValue.Tags.float_value or
+          value.literal_value.tag
+          == mojom_types_mojom.LiteralValue.Tags.double_value):
+        # Use the Python repr() function to get a string that accurately
+        # represents the value of the floating point number.
+        return repr(value.literal_value.data)
       return str(value.literal_value.data)
     elif value.tag == mojom_types_mojom.Value.Tags.builtin_value:
       mojom_to_builtin = {

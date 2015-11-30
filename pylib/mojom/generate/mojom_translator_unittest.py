@@ -363,13 +363,12 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         source_file_info=mojom_types_mojom.SourceFileInfo(file_name=file_name))
 
     field1 = mojom_types_mojom.UnionField(
-        tag = 10,
         decl_data=mojom_types_mojom.DeclarationData(short_name='field1'),
         type=mojom_types_mojom.Type(
           simple_type=mojom_types_mojom.SimpleType.BOOL))
     field2 = mojom_types_mojom.UnionField(
-        tag = 11,
-        decl_data=mojom_types_mojom.DeclarationData(short_name='field2'),
+        decl_data=mojom_types_mojom.DeclarationData(
+            short_name='field2', declared_ordinal=5),
         type=mojom_types_mojom.Type(
           simple_type=mojom_types_mojom.SimpleType.DOUBLE))
     mojom_union.fields = [field1, field2]
@@ -388,9 +387,9 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
       self.assertEquals(gold.decl_data.short_name, f.name)
 
     self.assertEquals(module.BOOL, union.fields[0].kind)
-    self.assertEquals(10, union.fields[0].ordinal)
+    self.assertEquals(None, union.fields[0].ordinal)
     self.assertEquals(module.DOUBLE, union.fields[1].kind)
-    self.assertEquals(11, union.fields[1].ordinal)
+    self.assertEquals(5, union.fields[1].ordinal)
 
   def literal_value(self, x):
     """Creates a typed literal value containing the value |x|.
@@ -625,15 +624,21 @@ class TestValueFromMojom(unittest.TestCase):
     mojom_int64.literal_value = mojom_types_mojom.LiteralValue(int64_value=20)
     mojom_bool = mojom_types_mojom.Value()
     mojom_bool.literal_value = mojom_types_mojom.LiteralValue(bool_value=True)
+    mojom_double = mojom_types_mojom.Value()
+    mojom_double.literal_value = mojom_types_mojom.LiteralValue(
+        double_value=1234.012345678901)
 
     graph = mojom_files_mojom.MojomFileGraph()
     int64_const = mojom_translator.FileTranslator(graph, None).ValueFromMojom(
         mojom_int64)
     bool_const = mojom_translator.FileTranslator(graph, None).ValueFromMojom(
         mojom_bool)
+    double_const = mojom_translator.FileTranslator(graph, None).ValueFromMojom(
+        mojom_double)
 
     self.assertEquals('20', int64_const)
     self.assertEquals('true', bool_const)
+    self.assertEquals('1234.012345678901', double_const)
 
   def test_builtin_const(self):
     mojom = mojom_types_mojom.Value()
