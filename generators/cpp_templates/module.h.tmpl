@@ -1,3 +1,5 @@
+{#- TODO(vardhan): This template produces crazy amounts of whitespace. Clean
+this stuff up (it involves digging through all the templates included here. -#}
 // Copyright 2013 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -29,27 +31,12 @@
 #include "{{import.module.path}}.h"
 {%- endfor %}
 
+{#------------------------ #}
+{#--- Forward Declarations #}
+{#------------------------ #}
+
 {%- for namespace in namespaces_as_array %}
 namespace {{namespace}} {
-{%- endfor %}
-
-{#--- Enums #}
-{% from "enum_macros.tmpl" import enum_decl -%}
-{% from "enum_macros.tmpl" import global_enum_operators_decl -%}
-{%  for enum in enums %}
-  {{enum_decl(enum)}}
-  {{global_enum_operators_decl(enum)}}
-{%- endfor %}
-
-{#--- Constants #}
-{%- for constant in module.constants %}
-{#-   To be consistent with constants defined inside interfaces, only make
-      integral types compile-time constants. #}
-{%-   if constant.kind|is_integral_kind %}
-const {{constant.kind|cpp_pod_type}} {{constant.name}} = {{constant|constant_value}};
-{%-   else %}
-extern const {{constant.kind|cpp_pod_type}} {{constant.name}};
-{%-   endif %}
 {%- endfor %}
 
 {#--- Interface Forward Declarations -#}
@@ -71,6 +58,56 @@ typedef mojo::InlinedStructPtr<{{union.name}}> {{union.name}}Ptr;
 {%    else %}
 typedef mojo::StructPtr<{{union.name}}> {{union.name}}Ptr;
 {%    endif %}
+{%- endfor %}
+
+{%- for namespace in namespaces_as_array|reverse %}
+}  // namespace {{namespace}}
+{%- endfor %}
+
+{#------------------------------------- #}
+{#--- Internal Template Specializations #}
+{#------------------------------------- #}
+
+namespace mojo {
+namespace internal {
+
+{%- for struct in structs %}
+{%    set namespace = namespaces_as_array|join("::") %}
+{%    set struct_name = struct|get_name_for_kind %}
+template <>
+struct WrapperTraits<{{namespace}}::{{struct_name}}Ptr, true, false> {
+  using DataType = {{namespace}}::internal::{{struct_name}}_Data*;
+};
+{%- endfor %}
+
+}  // internal
+}  // mojo
+
+{#---------------- #}
+{#--- Declarations #}
+{#---------------- #}
+
+{%- for namespace in namespaces_as_array %}
+namespace {{namespace}} {
+{%- endfor %}
+
+{#--- Enums #}
+{% from "enum_macros.tmpl" import enum_decl -%}
+{% from "enum_macros.tmpl" import global_enum_operators_decl -%}
+{%  for enum in enums %}
+  {{enum_decl(enum)}}
+  {{global_enum_operators_decl(enum)}}
+{%- endfor %}
+
+{#--- Constants #}
+{%- for constant in module.constants %}
+{#-   To be consistent with constants defined inside interfaces, only make
+      integral types compile-time constants. #}
+{%-   if constant.kind|is_integral_kind %}
+const {{constant.kind|cpp_pod_type}} {{constant.name}} = {{constant|constant_value}};
+{%-   else %}
+extern const {{constant.kind|cpp_pod_type}} {{constant.name}};
+{%-   endif %}
 {%- endfor %}
 
 {#--- Interfaces -#}
