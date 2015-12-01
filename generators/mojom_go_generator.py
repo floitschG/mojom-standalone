@@ -57,11 +57,6 @@ _kind_infos = {
   mojom.NULLABLE_STRING:       KindInfo('string', 'String', 'String', 64),
 }
 
-# _imports keeps track of the imports that the .go.mojom file needs to import.
-_imports = {}
-
-# _mojom_imports keeps a list of the other .mojom files imported by this one.
-_mojom_imports = {}
 
 # The mojom_types.mojom and service_describer.mojom files are special because
 # they are used to generate mojom Type's and ServiceDescription implementations.
@@ -136,7 +131,7 @@ def FormatName(name, exported=True):
   # Leave '_' symbols for unexported names.
   return name[0].lower() + name[1:]
 
-# Returns full name of an imported element based on prebuilt dict |_imports|.
+# Returns full name of an imported element.
 # If the |element| is not imported returns formatted name of it.
 # |element| should have attr 'name'. |exported| argument is used to make
 # |FormatName()| calls only.
@@ -238,12 +233,7 @@ def GetPackageName(module):
 def GetPackageNameForElement(element):
   if not hasattr(element, 'imported_from') or not element.imported_from:
     return ''
-  path = ''
-  if element.imported_from['module'].path:
-    path += GetPackagePath(element.imported_from['module'])
-  if path in _imports:
-    return _imports[path]
-  return ''
+  return element.imported_from.get('go_name', '')
 
 def GetQualifiedName(name, package=None, exported=True):
   if not package:
@@ -264,22 +254,37 @@ def GetAllEnums(module):
   enums = [x.enums for x in data]
   return [i for i in chain.from_iterable(enums)]
 
-# Adds an import required to use the provided |element|.
-# The required import is stored at '_imports'.
-# The mojom imports are also stored separately in '_mojom_imports'.
-def AddImport(module, element):
+def AddImport(imports, mojom_imports, module, element):
+  """Adds an import required to use the provided element.
+
+  The required import is stored in the imports parameter.
+  The corresponding mojom import is stored in the mojom_imports parameter.
+  Each import is also updated to include a 'go_name' entry. The 'go_name' entry
+  is the name by which the imported module will be referred to in the generated
+  code. Because the import dictionary is accessible from the element's
+  imported_from field this allows us to generate the qualified name for the
+  element.
+
+  Args:
+    imports: {dict<str, str>} The key is the path to the import and the value
+      is the go name.
+    mojom_imports: {dict<str, str>} The key is the path to the import and the
+      value is the go name.
+    module: {module.Module} the module being processed.
+    element: {module.Kind} the element whose import is to be tracked.
+  """
   if not isinstance(element, mojom.Kind):
     return
 
   if mojom.IsArrayKind(element) or mojom.IsInterfaceRequestKind(element):
-    AddImport(module, element.kind)
+    AddImport(imports, mojom_imports, module, element.kind)
     return
   if mojom.IsMapKind(element):
-    AddImport(module, element.key_kind)
-    AddImport(module, element.value_kind)
+    AddImport(imports, mojom_imports, module, element.key_kind)
+    AddImport(imports, mojom_imports, module, element.value_kind)
     return
   if mojom.IsAnyHandleKind(element):
-    _imports['mojo/public/go/system'] = 'system'
+    imports['mojo/public/go/system'] = 'system'
     return
 
   if not hasattr(element, 'imported_from') or not element.imported_from:
@@ -288,13 +293,14 @@ def AddImport(module, element):
   if GetPackagePath(imported['module']) == GetPackagePath(module):
     return
   path = GetPackagePath(imported['module'])
-  if path in _imports:
+  if path in imports:
     return
   name = GetPackageName(imported['module'])
-  while name in _imports.values(): # This avoids repeated names.
+  while name in imports.values(): # This avoids repeated names.
     name += '_'
-  _imports[path] = name
-  _mojom_imports[path] = name
+  imported['go_name'] = name
+  imports[path] = name
+  mojom_imports[path] = name
 
 # The identifier cache is used by the Type generator to determine if a type has
 # already been generated or not. This prevents over-generation of the same type
@@ -371,11 +377,12 @@ class Generator(generator.Generator):
 
   def GetParameters(self):
     package = GetPackageName(self.module)
+    imports, mojom_imports = self.GetImports()
     return {
       'enums': GetAllEnums(self.module),
-      'imports': self.GetImports()[0],
+      'imports': imports,
       'interfaces': self.GetInterfaces(),
-      'mojom_imports': self.GetMojomImports(),
+      'mojom_imports': mojom_imports,
       'package': package,
       'structs': self.GetStructs(),
       'descpkg': '%s.' % _service_describer_pkg_short \
@@ -406,14 +413,21 @@ class Generator(generator.Generator):
       'should_gen_mojom_types': self.should_gen_mojom_types,
     }
 
-  # Scans |self.module| for elements that require imports and adds all found
-  # imports to '_imports' dict. Mojom imports are stored in the '_mojom_imports'
-  # dict. This operation is idempotent.
-  # Returns a tuple:
-  # - list of imports that should include the generated go file
-  # - the dictionary of _mojom_imports
   def GetImports(self):
-    # Imports can only be used in structs, constants, enums, interfaces.
+    """Gets the current module's imports.
+
+    Returns:
+      tuple(dict<str, str>, dict<str, str>)
+      The first element of the tuple is a dictionary mapping import paths to
+        import names.
+      The second element is a dictionary mapping import paths to import names
+        only for imported mojom files.
+    """
+    imports = {}
+    mojom_imports = {}
+    # Imports are referred to by the imported_from field of imported kinds.
+    # Imported kinds can only be referred to in structs, constants, enums,
+    # unions and interfaces.
     all_structs = list(self.module.structs)
     for i in self.module.interfaces:
       for method in i.methods:
@@ -423,28 +437,28 @@ class Generator(generator.Generator):
 
     if (len(all_structs) > 0 or len(self.module.interfaces) > 0
         or len(self.module.unions) > 0):
-      _imports['fmt'] = 'fmt'
-      _imports['mojo/public/go/bindings'] = 'bindings'
+      imports['fmt'] = 'fmt'
+      imports['mojo/public/go/bindings'] = 'bindings'
     if len(self.module.interfaces) > 0:
-      _imports['mojo/public/go/system'] = 'system'
+      imports['mojo/public/go/system'] = 'system'
     if len(all_structs) > 0:
-      _imports['sort'] = 'sort'
+      imports['sort'] = 'sort'
 
     for union in self.module.unions:
       for field in union.fields:
-        AddImport(self.module, field.kind)
+        AddImport(imports, mojom_imports, self.module, field.kind)
 
     for struct in all_structs:
       for field in struct.fields:
-        AddImport(self.module, field.kind)
+        AddImport(imports, mojom_imports, self.module, field.kind)
 # TODO(rogulenko): add these after generating constants and struct defaults.
 #        if field.default:
-#          AddImport(self.module, field.default)
+#          AddImport(imports, mojom_imports, self.module, field.default)
 
     for enum in GetAllEnums(self.module):
       for field in enum.fields:
         if field.value:
-          AddImport(self.module, field.value)
+          AddImport(imports, mojom_imports, self.module, field.value)
 
     # Mojom Type generation requires additional imports.
     defInterface = len(self.module.interfaces) > 0
@@ -454,31 +468,21 @@ class Generator(generator.Generator):
     if GetPackageName(self.module) != _mojom_types_pkg_short:
       if defInterface:
         # Each Interface has a service description that uses this.
-        _imports[_mojom_types_pkg] = _mojom_types_pkg_short
+        imports[_mojom_types_pkg] = _mojom_types_pkg_short
       if defOtherType and self.should_gen_mojom_types:
         # This import is needed only if generating mojom type definitions.
-        _imports[_mojom_types_pkg] = _mojom_types_pkg_short
+        imports[_mojom_types_pkg] = _mojom_types_pkg_short
 
     if GetPackageName(self.module) != _service_describer_pkg_short and \
       defInterface:
       # Each Interface has a service description that uses this.
-      _imports[_service_describer_pkg] = _service_describer_pkg_short
+      imports[_service_describer_pkg] = _service_describer_pkg_short
 
 # TODO(rogulenko): add these after generating constants and struct defaults.
 #    for constant in GetAllConstants(self.module):
-#      AddImport(self.module, constant.value)
+#      AddImport(imports, mojom_imports, self.module, constant.value)
 
-    imports_list = []
-    for i in _imports:
-      if i.split('/')[-1] == _imports[i]:
-        imports_list.append('"%s"' % i)
-      else:
-        imports_list.append('%s "%s"' % (_imports[i], i))
-    return sorted(imports_list), _mojom_imports
-
-  def GetMojomImports(self):
-    # GetImports (idempotent) prepares the _imports and _mojom_imports maps.
-    return self.GetImports()[1]
+    return imports, mojom_imports
 
   # Overrides the implementation from the base class in order to customize the
   # struct and field names.

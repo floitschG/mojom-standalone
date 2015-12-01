@@ -11,8 +11,8 @@
 package {{package}}
 
 import (
-{% for i in imports %}
-	{{i}}
+{% for path, name in imports.iteritems() %}
+	{{name}} "{{path}}"
 {% endfor %}
 )
 
