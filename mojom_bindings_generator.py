@@ -25,9 +25,9 @@ def main():
   (args, remaining_args) = parser.parse_known_args()
 
   if args.compiler_version == 1:
-    mojom_bindings_generator_v1.main(remaining_args)
+    return mojom_bindings_generator_v1.main(remaining_args)
   elif args.compiler_version == 2:
-    mojom_bindings_generator_v2.main(remaining_args)
+    return mojom_bindings_generator_v2.main(remaining_args)
   else:
     raise Exception("There are only 2 compiler versions: 1 and 2!")
 

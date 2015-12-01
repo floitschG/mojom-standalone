@@ -19,7 +19,8 @@ def RunParser(args):
     args: {Namespace} The parsed arguments passed to the script.
 
   Returns:
-    {str} The serialized mojom_files.MojomFileGraph returned by mojom parser.
+    {str} The serialized mojom_files.MojomFileGraph returned by mojom parser,
+    or None if the mojom parser returned a non-zero error code.
   """
   if platform.system() != "Linux" or platform.architecture()[0] != "64bit":
     raise Exception("The mojom parser currently only works on Linux 64 bits.")
@@ -42,8 +43,10 @@ def RunParser(args):
 
   cmd.extend(args.filename)
 
-  return subprocess.check_output(cmd)
-
+  try:
+    return subprocess.check_output(cmd)
+  except subprocess.CalledProcessError:
+    return None
 
 def RunGenerators(serialized_file_graph, args, remaining_args):
   """Runs the code generators.
@@ -116,7 +119,9 @@ def main(argv):
 
   serialized_file_graph = RunParser(args)
 
-  return RunGenerators(serialized_file_graph, args, remaining_args)
+  if serialized_file_graph:
+    return RunGenerators(serialized_file_graph, args, remaining_args)
+  return 1
 
 
 if __name__ == "__main__":
