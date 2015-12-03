@@ -12,9 +12,6 @@ import platform
 import subprocess
 import sys
 
-# We assume this script is located in the Mojo SDK in tools/bindings.
-BINDINGS_DIR = os.path.abspath(os.path.dirname(__file__))
-
 def RunParser(args):
   """Runs the mojom parser.
 
@@ -28,8 +25,8 @@ def RunParser(args):
   if platform.system() != "Linux" or platform.architecture()[0] != "64bit":
     raise Exception("The mojom parser currently only works on Linux 64 bits.")
 
-  mojom_parser = os.path.join(BINDINGS_DIR,
-      "mojom_parser", "bin", "linux64", "mojom_parser")
+  mojom_parser = os.path.join(
+      args.depth, "mojom", "mojom_parser", "bin", "linux64", "mojom_parser")
   # TODO(azani): Automatically detect the OS and select the right binary.
 
   if args.mojom_parser:
