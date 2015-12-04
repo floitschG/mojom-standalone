@@ -137,7 +137,12 @@ def FormatName(name, exported=True):
 # |FormatName()| calls only.
 def GetFullName(element, exported=True):
   return GetQualifiedName(
-      element.name, GetPackageNameForElement(element), exported)
+    element.name, GetPackageNameForElement(element), exported)
+
+# Returns a string of the form package.path.TypeName - the full identifier
+# for an element.
+def GetFullIdentifier(element, exported=True):
+  return '%s.%s' % (element.module.namespace, GetNameForElement(element))
 
 def GetUnqualifiedNameForElement(element, exported=True):
   return FormatName(element.name, exported)
@@ -363,6 +368,7 @@ class Generator(generator.Generator):
     'is_struct': mojom.IsStructKind,
     'is_union': mojom.IsUnionKind,
     'qualified': GetQualifiedName,
+    'fullidentifier': GetFullIdentifier,
     'mojom_type': GetMojomTypeValue,
     'mojom_type_identifier': GetMojomTypeIdentifier,
     'name': GetNameForElement,

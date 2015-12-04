@@ -68,6 +68,7 @@
 // String names and labels used by the MojomEnum types.
 var (
   enumName_{{type|name}} = "{{type|name}}"
+  enumFullIdentifier_{{type|name}} = "{{type|fullidentifier}}"
 {% for field in type.fields %}
   enumFieldName_{{type|name}}_{{field|name}} = "{{field|name}}"
 {% endfor %}
@@ -80,6 +81,7 @@ func {{type|mojom_type_identifier}}() {{typepkg}}MojomEnum {
 // String names and labels used by the MojomStruct types.
 var (
   structName_{{type|name}} = "{{type|name}}"
+  structFullIdentifier_{{type|name}} = "{{type|fullidentifier}}"
 {% for field in type.fields %}
   structFieldName_{{type|name}}_{{field|name}} = "{{field|name}}"
 {% endfor %}
@@ -92,6 +94,7 @@ func {{type|mojom_type_identifier}}() {{typepkg}}MojomStruct {
 // String names and labels used by the MojomUnion types.
 var (
   unionName_{{type|name}} = "{{type|name}}"
+  unionFullIdentifier_{{type|name}} = "{{type|fullidentifier}}"
 {% for field in type.fields %}
   unionFieldName_{{type|name}}_{{field|name}} = "{{field|name}}"
 {% endfor %}
@@ -103,6 +106,7 @@ func {{type|mojom_type_identifier}}() {{typepkg}}MojomUnion {
 {%- elif type|is_interface -%}
 var (
   interfaceName_{{type|name}} = "{{type|name}}"
+  interfaceFullIdentifier_{{type|name}} = "{{type|fullidentifier}}"
 {% for method in type.methods %}
   interfaceMethodName_{{type|name}}_{{method|name}} = "{{method|name}}"
 {% endfor %}
@@ -120,6 +124,7 @@ func {{type|mojom_type_identifier}}() {{typepkg}}MojomInterface {
   return {{typepkg}}MojomInterface{
     DeclData: &{{typepkg}}DeclarationData{
       ShortName: &interfaceName_{{type|name}},
+      FullIdentifier: &interfaceFullIdentifier_{{type|name}},
     },
     Methods: map[uint32]{{typepkg}}MojomMethod{
 {%- for method in type.methods -%}
@@ -170,6 +175,7 @@ BAD TYPE NAME GIVEN
   {{typepkg}}MojomEnum{
     DeclData: &{{typepkg}}DeclarationData{
       ShortName: &enumName_{{type|name}},
+      FullIdentifier: &enumFullIdentifier_{{type|name}},
     },
     Values: []{{typepkg}}EnumValue{
       {%- for field in type.fields -%}
@@ -190,6 +196,7 @@ BAD TYPE NAME GIVEN
   {{typepkg}}MojomStruct{
     DeclData: &{{typepkg}}DeclarationData{
       ShortName: &structName_{{type|name}},
+      FullIdentifier: &structFullIdentifier_{{type|name}},
     },
     {%- if type|is_nullable -%}
     Nullable: true,
@@ -212,6 +219,7 @@ BAD TYPE NAME GIVEN
   {{typepkg}}MojomUnion{
     DeclData: &{{typepkg}}DeclarationData{
       ShortName: &unionName_{{type|name}},
+      FullIdentifier: &unionFullIdentifier_{{type|name}},
     },
     {%- if type|is_nullable -%}
     Nullable: true,
