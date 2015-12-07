@@ -79,13 +79,13 @@
 {%- macro call_serialize_union(input, buffer, output, inlined,
                                should_return_errors) -%}  
   {
-{%- if should_return_errors -%}
+{%- if should_return_errors %}
     auto retval =
-{%- endif -%}
-    SerializeUnion_({{input}},
-                    {{buffer}},
-                    {{output}},
-                    {{inlined}});
+{%- endif %}
+      SerializeUnion_({{input}},
+                      {{buffer}},
+                      {{output}},
+                      {{inlined}});
 {%- if should_return_errors %}
     if (retval != mojo::internal::ValidationError::NONE)
       return retval;
@@ -239,8 +239,10 @@
 {%-     endif %}
 {%-     if kind|is_object_kind %}
 {%-       if kind|is_union_kind %}
-    {{output_field}} = {{kind|get_name_for_kind}}::New();
-    Deserialize_(&{{input}}->{{name}}, {{output_field}}.get());
+    if (!{{input}}->{{name}}.is_null()) {
+      {{output_field}} = {{kind|get_name_for_kind}}::New();
+      Deserialize_(&{{input}}->{{name}}, {{output_field}}.get());
+    }
 {%-       elif kind|is_struct_kind %}
     if ({{input}}->{{name}}.ptr) {
       {{output_field}} = {{kind|get_name_for_kind}}::New();
