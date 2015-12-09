@@ -43,19 +43,25 @@ type {{interface|name}} interface {
 {% endfor %}
 }
 
-var {{interface|name(False)}}_Name = "{{interface.module.namespace|replace(".","::")}}::{{interface.name}}"
+{% if interface.service_name %}
+var {{interface|name(False)}}_Name = "{{interface.service_name}}"
+{% endif %}
 
 type {{interface|name}}_Request bindings.InterfaceRequest
 
+{% if interface.service_name %}
 func (r *{{interface|name}}_Request) Name() string {
 	return {{interface|name(False)}}_Name
 }
+{% endif %}
 
 type {{interface|name}}_Pointer bindings.InterfacePointer
 
+{% if interface.service_name %}
 func (p *{{interface|name}}_Pointer) Name() string {
 	return {{interface|name(False)}}_Name
 }
+{% endif %}
 
 type {{interface|name}}_ServiceFactory struct{
 	Delegate {{interface|name}}_Factory
@@ -65,9 +71,11 @@ type {{interface|name}}_Factory interface {
 	Create(request {{interface|name}}_Request)
 }
 
+{% if interface.service_name %}
 func (f *{{interface|name}}_ServiceFactory) Name() string {
 	return {{interface|name(False)}}_Name
 }
+{% endif %}
 
 func (f *{{interface|name}}_ServiceFactory) ServiceDescription() {{descpkg}}ServiceDescription {
 	return &{{interface|name}}_ServiceDescription{}
