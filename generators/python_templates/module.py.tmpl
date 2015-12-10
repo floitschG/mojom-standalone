@@ -47,7 +47,7 @@ class {{union|name}}(object):
 class {{interface|name}}(object):
   __metaclass__ = _interface_reflection.MojoInterfaceType
   DESCRIPTOR = {
-    'fully_qualified_name': '{% if namespace %}{{namespace|replace(".","::")}}::{% endif %}{{interface|fully_qualified_name|replace(".","::")}}',
+    'fully_qualified_name': {% if interface.service_name %}'{{interface.service_name}}'{% else %}None{% endif %},
     'version': {{interface.version}},
     'methods': [
 {%  for method in interface.methods %}
