@@ -11,9 +11,11 @@ class {{class_name}} {
   // Do nothing in the destructor since it won't be called.
   ~{{class_name}}() {}
 
-  static bool Validate(const void* data,
-                       mojo::internal::BoundsChecker* bounds_checker,
-                       bool inlined);
+  static mojo::internal::ValidationError Validate(
+      const void* data,
+      mojo::internal::BoundsChecker* bounds_checker,
+      bool inlined,
+      std::string* err);
 
   bool is_null() const {
     return size == 0;

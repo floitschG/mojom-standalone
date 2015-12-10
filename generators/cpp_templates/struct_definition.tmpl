@@ -6,7 +6,7 @@
 {#- Validates the specified struct field, which is supposed to be an object
     (struct/array/string/map/union).
     This macro is expanded by the Validate() method. #}
-{%- macro _validate_object(struct, packed_field) %}
+{%- macro _validate_object(struct, packed_field, err_string) %}
 {%-   set name = packed_field.field.name %}
 {%-   set kind = packed_field.field.kind %}
 {%-   set wrapper_type = kind|cpp_wrapper_type %}
@@ -16,50 +16,56 @@
 {%-     else %}
   if (!object->{{name}}.offset) {
 {%-     endif %}
-    ReportValidationError(
-        mojo::internal::ValidationError::UNEXPECTED_NULL_POINTER,
-        "null {{name}} field in {{struct.name}} struct");
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG({{err_string}}) <<
+        "null {{name}} field in {{struct.name}} struct";
+    return mojo::internal::ValidationError::UNEXPECTED_NULL_POINTER;
   }
 {%-   endif %}
 {%-   if not kind|is_union_kind %}
   if (!mojo::internal::ValidateEncodedPointer(&object->{{name}}.offset)) {
-    ReportValidationError(mojo::internal::ValidationError::ILLEGAL_POINTER);
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG({{err_string}}) << "";
+    return mojo::internal::ValidationError::ILLEGAL_POINTER;
   }
 {%-   endif %}
+
 {%-   if kind|is_array_kind or kind|is_string_kind %}
   const mojo::internal::ArrayValidateParams {{name}}_validate_params(
       {{kind|get_array_validate_params_ctor_args|indent(6)}});
-  if (!{{wrapper_type}}::Data_::Validate(
-              mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
-              bounds_checker, &{{name}}_validate_params)) {
+  auto validate_retval =
+      {{wrapper_type}}::Data_::Validate(
+          mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
+          bounds_checker, &{{name}}_validate_params, {{err_string}});
+  if (validate_retval != mojo::internal::ValidationError::NONE) {
 {%-   elif kind|is_map_kind %}
   const mojo::internal::ArrayValidateParams {{name}}_validate_params(
       {{kind.value_kind|get_map_validate_params_ctor_args|indent(6)}});
-  if (!{{wrapper_type}}::Data_::Validate(
+  auto validate_retval = {{wrapper_type}}::Data_::Validate(
               mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
-              bounds_checker, &{{name}}_validate_params)) {
+              bounds_checker, &{{name}}_validate_params, {{err_string}}); 
+  if (validate_retval != mojo::internal::ValidationError::NONE) {
 {%-   elif kind|is_struct_kind %}
-  if (!{{kind|get_name_for_kind}}::Data_::Validate(
+  auto validate_retval = {{kind|get_name_for_kind}}::Data_::Validate(
           mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
-          bounds_checker)) {
+          bounds_checker, {{err_string}});
+  if (validate_retval != mojo::internal::ValidationError::NONE) {
 {%-   elif kind|is_union_kind %}
-  if (!{{kind|get_name_for_kind}}::Data_::Validate(
-          &object->{{name}}, bounds_checker, true)) {
+  auto validate_retval = {{kind|get_name_for_kind}}::Data_::Validate(
+          &object->{{name}}, bounds_checker, true, {{err_string}});
+  if (validate_retval != mojo::internal::ValidationError::NONE) {
 {%-   else %}
-  if (!{{wrapper_type}}::Data_::Validate(
+  auto validate_retval = {{wrapper_type}}::Data_::Validate(
           mojo::internal::DecodePointerRaw(&object->{{name}}.offset),
-          bounds_checker)) {
+          bounds_checker, {{err_string}}); 
+  if (validate_retval != mojo::internal::ValidationError::NONE) {
 {%-   endif %}
-    return false;
+    return validate_retval;
   }
 {%- endmacro %}
 
 {#- Validates the specified struct field, which is supposed to be a handle or
     contain a handle (in the case of interfaces).
     This macro is expanded by the Validate() method. #}
-{%- macro _validate_handle(struct, packed_field) %}
+{%- macro _validate_handle(struct, packed_field, err_string) %}
 {%-   set name = packed_field.field.name %}
 {%-   set kind = packed_field.field.kind %}
 {%-   if kind|is_interface_kind %}
@@ -69,15 +75,14 @@
 {%-   endif %}
 {%-   if not kind|is_nullable_kind %}
   if ({{name}}_handle.value() == mojo::internal::kEncodedInvalidHandleValue) {
-    ReportValidationError(
-        mojo::internal::ValidationError::UNEXPECTED_INVALID_HANDLE,
-        "invalid {{name}} field in {{struct.name}} struct");
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG({{err_string}})
+        << "invalid {{name}} field in {{struct.name}} struct";
+    return mojo::internal::ValidationError::UNEXPECTED_INVALID_HANDLE;
   }
 {%-   endif %}
   if (!bounds_checker->ClaimHandle({{name}}_handle)) {
-    ReportValidationError(mojo::internal::ValidationError::ILLEGAL_HANDLE);
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG({{err_string}}) << "";
+    return mojo::internal::ValidationError::ILLEGAL_HANDLE;
   }
 {%- endmacro %}
 
@@ -87,13 +92,18 @@
 }
 
 // static
-bool {{class_name}}::Validate(const void* data,
-                              mojo::internal::BoundsChecker* bounds_checker) {
+mojo::internal::ValidationError {{class_name}}::Validate(
+    const void* data,
+    mojo::internal::BoundsChecker* bounds_checker,
+    std::string* err) {
+  mojo::internal::ValidationError retval;
+  
   if (!data)
-    return true;
+    return mojo::internal::ValidationError::NONE;
 
-  if (!ValidateStructHeaderAndClaimMemory(data, bounds_checker))
-    return false;
+  retval = ValidateStructHeaderAndClaimMemory(data, bounds_checker, err);
+  if (retval != mojo::internal::ValidationError::NONE)
+    return retval;
 
   // NOTE: The memory backing |object| may be smaller than |sizeof(*object)| if
   // the message comes from an older version.
@@ -116,16 +126,14 @@ bool {{class_name}}::Validate(const void* data,
         if (object->header_.num_bytes == kVersionSizes[i].num_bytes)
           break;
 
-        ReportValidationError(
-            mojo::internal::ValidationError::UNEXPECTED_STRUCT_HEADER);
-        return false;
+        MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err) << "";
+        return mojo::internal::ValidationError::UNEXPECTED_STRUCT_HEADER;
       }
     }
   } else if (object->header_.num_bytes <
                  kVersionSizes[MOJO_ARRAYSIZE(kVersionSizes) - 1].num_bytes) {
-    ReportValidationError(
-        mojo::internal::ValidationError::UNEXPECTED_STRUCT_HEADER);
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err) << "";
+    return mojo::internal::ValidationError::UNEXPECTED_STRUCT_HEADER;
   }
 
 {#- Before validating fields introduced at a certain version, we need to add
@@ -139,17 +147,21 @@ bool {{class_name}}::Validate(const void* data,
 {%-     if packed_field.min_version > last_checked_version %}
 {%-       set last_checked_version = packed_field.min_version %}
   if (object->header_.version < {{packed_field.min_version}})
-    return true;
+    return mojo::internal::ValidationError::NONE;
 {%-     endif %}
 {%-     if kind|is_object_kind %}
-{{_validate_object(struct, packed_field)}}
+  {
+    {{_validate_object(struct, packed_field, "err")}}
+  }
 {%-     else %}
-{{_validate_handle(struct, packed_field)}}
+  {
+    {{_validate_handle(struct, packed_field, "err")}}
+  }
 {%-     endif %}
 {%-   endif %}
 {%- endfor %}
 
-  return true;
+  return mojo::internal::ValidationError::NONE;
 }
 
 void {{class_name}}::EncodePointersAndHandles(

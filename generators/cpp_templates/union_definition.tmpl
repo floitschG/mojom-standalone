@@ -7,45 +7,47 @@
   return new (buf->Allocate(sizeof({{class_name}}))) {{class_name}}();
 }
 
+{# TODO(vardhan): Set error messages here for the remaining validation
+   errors. #}
 // static
-bool {{class_name}}::Validate(const void* data,
-                              mojo::internal::BoundsChecker* bounds_checker,
-                              bool inlined) {
-  if (!data) {
-    return true;
-  }
+mojo::internal::ValidationError {{class_name}}::Validate(
+    const void* data,
+    mojo::internal::BoundsChecker* bounds_checker,
+    bool inlined,
+    std::string* err) {
+  if (!data)
+    return mojo::internal::ValidationError::NONE;
 
   if (!mojo::internal::IsAligned(data)) {
-    ReportValidationError(mojo::internal::ValidationError::MISALIGNED_OBJECT);
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err) << "";
+    return mojo::internal::ValidationError::MISALIGNED_OBJECT;
   }
 
   // If the union is inlined in another structure its memory was already claimed.
   // This ONLY applies to the union itself, NOT anything which the union points
   // to.
   if (!inlined && !bounds_checker->ClaimMemory(data, sizeof({{class_name}}))) {
-    ReportValidationError(
-        mojo::internal::ValidationError::ILLEGAL_MEMORY_RANGE);
-    return false;
+    MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err) << "";
+    return mojo::internal::ValidationError::ILLEGAL_MEMORY_RANGE;
   }
+
   const {{class_name}}* object = static_cast<const {{class_name}}*>(data);
   MOJO_ALLOW_UNUSED_LOCAL(object);
 
-  if (object->is_null()) {
-    return true;
-  }
+  if (object->is_null())
+    return mojo::internal::ValidationError::NONE;
 
   switch (object->tag) {
 {%  for field in union.fields %}
     case {{enum_name}}::{{field.name|upper}}: {
-{{ validation_macros.validate_union_field(field, union)|indent(8) }}
+{{ validation_macros.validate_union_field(field, union, "err")|indent(8) }}
     }
 {%- endfor %}
     default:
       // Unknown tags should not cause validation to fail.
       break;
   }
-  return true;
+  return mojo::internal::ValidationError::NONE;
 }
 
 void {{class_name}}::set_null() {
