@@ -67,7 +67,7 @@ class MojoInterfaceType(type):
     fully_qualified_name = descriptor['fully_qualified_name']
 
     interface_manager = InterfaceManager(
-        fully_qualified_name, descriptor['version'], methods)
+        name, descriptor['version'], methods, fully_qualified_name)
     dictionary.update({
         'manager': None,
         '_interface_manager': interface_manager,
@@ -97,10 +97,11 @@ class InterfaceManager(object):
   over a pipe.
   """
 
-  def __init__(self, name, version, methods):
+  def __init__(self, name, version, methods, service_name):
     self.name = name
     self.version = version
     self.methods = methods
+    self.service_name = service_name
     self.interface_class = None
     self._proxy_class = None
     self._stub_class = None

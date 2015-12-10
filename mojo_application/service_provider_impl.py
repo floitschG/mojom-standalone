@@ -13,8 +13,13 @@ class ServiceProviderImpl(service_provider_mojom.ServiceProvider):
     self._provider = provider
     self._name_to_service_connector = {}
 
-  def AddService(self, service_class):
-    self._name_to_service_connector[service_class.manager.name] = service_class
+  def AddService(self, service_class, service_name=None):
+    if service_name is None:
+      service_name = service_class.manager.service_name
+    if service_name is None:
+      logging.error("No ServiceName specified for %s." % service_class.__name__)
+      return
+    self._name_to_service_connector[service_name] = service_class
 
   def ConnectToService(self, interface_name, pipe):
     if interface_name in self._name_to_service_connector:

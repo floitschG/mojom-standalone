@@ -4,6 +4,8 @@
 
 """Python implementation of the Application interface."""
 
+import logging
+
 import application_mojom
 import service_provider_mojom
 import shell_mojom
@@ -46,12 +48,15 @@ class ApplicationImpl(application_mojom.Application):
     application to be connected to, and |service_class| is the class of the
     service to be connected to. Returns a proxy to the service.
     """
+    if not service_class.manager.service_name:
+      logging.error("No ServiceName specified for %s." % service_class.__name__)
+      return
     application_proxy, request = (
         service_provider_mojom.ServiceProvider.manager.NewRequest())
     self.shell.ConnectToApplication(application_url, request, None)
 
     service_proxy, request = service_class.manager.NewRequest()
-    application_proxy.ConnectToService(service_class.manager.name,
+    application_proxy.ConnectToService(service_class.manager.service_name,
                                        request.PassMessagePipe())
 
     return service_proxy
