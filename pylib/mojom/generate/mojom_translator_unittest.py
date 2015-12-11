@@ -77,6 +77,7 @@ class TestTranslateFile(unittest.TestCase):
         fields=[],
         decl_data=mojom_types_mojom.DeclarationData(
           short_name='AStruct',
+          full_identifier='foo.AStruct',
           source_file_info=mojom_types_mojom.SourceFileInfo(
             file_name=file_name)))
     graph.resolved_types['struct_key'] = mojom_types_mojom.UserDefinedType(
@@ -138,8 +139,17 @@ class TestTranslateFile(unittest.TestCase):
     self.assertIn(second_level_imported_file_name, transitive_imports_paths)
 
     self.assertEquals(mojom_interface.interface_name, mod.interfaces[0].name)
+    # Interfaces should be assigned their name as their spec.
+    self.assertEquals('AnInterface', mod.interfaces[0].spec)
     self.assertEquals(mojom_struct.decl_data.short_name, mod.structs[0].name)
+    # The struct was given a full_identifier so its spec should be that.
+    self.assertEquals(mojom_struct.decl_data.full_identifier,
+        mod.structs[0].spec)
     self.assertEquals(mojom_union.decl_data.short_name, mod.unions[0].name)
+    # The union was given a short name but not a full_identifier so its spec
+    # should be the short name.
+    self.assertEquals(mojom_union.decl_data.short_name,
+        mod.unions[0].spec)
     self.assertEquals(mojom_enum.decl_data.short_name, mod.enums[0].name)
     self.assertEquals(mojom_const.decl_data.short_name, mod.constants[0].name)
 

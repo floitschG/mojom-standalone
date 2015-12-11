@@ -333,6 +333,9 @@ class FileTranslator(object):
     """
     module_type.attributes = self.AttributesFromMojom(mojom)
     module_type.name = mojom.decl_data.short_name
+    module_type.spec = mojom.decl_data.full_identifier
+    if module_type.spec == None:
+      module_type.spec = mojom.decl_data.short_name
     self.PopulateModuleOrImportedFrom(module_type, mojom)
 
   def PopulateModuleOrImportedFrom(self, module_type, mojom):
@@ -387,6 +390,8 @@ class FileTranslator(object):
       interface.service_name = interface.attributes.get('ServiceName')
     self.PopulateModuleOrImportedFrom(interface, mojom_interface)
     interface.name = mojom_interface.interface_name
+    interface.spec = interface.name
+
     interface.methods = [self.MethodFromMojom(mojom_method, interface)
         for mojom_method in mojom_interface.methods.itervalues()]
     self.PopulateContainedDeclarationsFromMojom(
@@ -759,10 +764,11 @@ class FileTranslator(object):
     module_type_class, from_mojom = user_defined_types[mojom_type.tag]
     module_type = module_type_class()
 
-    # module.py expects the spec of user defined types to be set when
-    # constructing map, array, and interface request types, but the value
-    # appears unimportant.
-    module_type.spec = 'dummyspec'
+    if module_type.spec == None:
+      # module.py expects the spec of user defined types to be set when
+      # constructing map, array, and interface request types, but the value
+      # appears to be only used for error messages.
+      module_type.spec = 'dummyspec'
 
     # It is necessary to cache the type object before populating it since in
     # the course of populating it, it may be necessary to resolve that same
