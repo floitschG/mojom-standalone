@@ -9,7 +9,9 @@ class {{interface.name}}ResponseValidator;
 
 class {{interface.name}} {
  public:
+{%- if interface.service_name %}
   static const char Name_[];
+{%- endif %}
   static const uint32_t Version_ = {{interface.version}};
 
   using Proxy_ = {{interface.name}}Proxy;
