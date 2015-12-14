@@ -18,7 +18,7 @@ class {{struct|name}} extends bindings.Struct {
 
 {#--- Constants #}
 {%-  for constant in struct.constants %}
-  static const {{constant.name}} = {{constant.value|expression_to_text}};
+  static const {{constant.kind|dart_type}} {{constant|name}} = {{constant.resolved_value}};
 {%-  endfor %}
 
 {#--- initDefaults() #}

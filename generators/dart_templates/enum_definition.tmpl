@@ -1,19 +1,19 @@
-{%- macro enum_def(enum) -%}
+{%- macro enum_def(enum) %}
 class {{enum|name}} extends bindings.MojoEnum {
 {%- for field in enum.fields %}
-  static const {{field.name}} = const {{enum|name}}._({{field.resolved_value}});
+  static const {{enum|name}} {{field|name}} = const {{enum|name}}._({{field.resolved_value}});
 {%- endfor %}
 
   const {{enum|name}}._(int v) : super(v);
 
   static const Map<String, {{enum|name}}> valuesMap = const {
 {%- for field in enum.fields %}
-    "{{field.name}}": {{field.name}},
+    "{{field|name}}": {{field|name}},
 {%- endfor %}
   };
   static const List<{{enum|name}}> values = const [
 {%- for field in enum.fields %}
-    {{field.name}},
+    {{field|name}},
 {%- endfor %}
   ];
 
@@ -23,7 +23,7 @@ class {{enum|name}} extends bindings.MojoEnum {
     switch (v) {
 {%- for field in enum.fields %}
       case {{field.resolved_value}}:
-        return {{field.name}};
+        return {{field|name}};
 {%- endfor %}
       default:
         return null;
@@ -43,12 +43,12 @@ class {{enum|name}} extends bindings.MojoEnum {
   String toString() {
     switch(this) {
 {%- for field in enum.fields %}
-      case {{field.name}}:
-        return '{{enum|name}}.{{field.name}}';
+      case {{field|name}}:
+        return '{{enum|name}}.{{field|name}}';
 {%- endfor %}
     }
   }
 
-  int toJson() => value;
+  int toJson() => mojoEnumValue;
 }
 {%- endmacro %}

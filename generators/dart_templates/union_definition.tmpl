@@ -5,7 +5,7 @@
 {%- macro enum_def(union) %}
 enum {{union|name}}Tag {
 {%-   for field in union.fields %}
-  {{field|tag_name}},
+  {{field|name}},
 {%-   endfor %}
   unknown
 }
@@ -15,13 +15,13 @@ enum {{union|name}}Tag {
 class {{union|name}} extends bindings.Union {
   static final _tag_to_int = const {
 {%-   for field in union.fields %}
-    {{union|name}}Tag.{{field|tag_name}}: {{field.ordinal}},
+    {{union|name}}Tag.{{field|name}}: {{field.ordinal}},
 {%-   endfor %}
   };
 
   static final _int_to_tag = const {
 {%-   for field in union.fields %}
-    {{field.ordinal}}: {{union|name}}Tag.{{field|tag_name}},
+    {{field.ordinal}}: {{union|name}}Tag.{{field|name}},
 {%-   endfor %}
   };
 
@@ -32,14 +32,14 @@ class {{union|name}} extends bindings.Union {
 
 {%-   for field in union.fields %}
   {{field.kind|dart_type}} get {{field|name}} {
-    if (_tag != {{union|name}}Tag.{{field|tag_name}}) {
-      throw new bindings.UnsetUnionTagError(_tag, {{union|name}}Tag.{{field|tag_name}});
+    if (_tag != {{union|name}}Tag.{{field|name}}) {
+      throw new bindings.UnsetUnionTagError(_tag, {{union|name}}Tag.{{field|name}});
     }
     return _data;
   }
 
   set {{field|name}}({{field.kind|dart_type}} value) {
-    _tag = {{union|name}}Tag.{{field|tag_name}};
+    _tag = {{union|name}}Tag.{{field|name}};
     _data = value;
   }
 {%-   endfor %}
@@ -55,7 +55,7 @@ class {{union|name}} extends bindings.Union {
     {{union|name}}Tag tag = _int_to_tag[decoder0.decodeUint32(offset + 4)];
     switch (tag) {
 {%-   for field in union.fields %}
-      case {{union|name}}Tag.{{field|tag_name}}:
+      case {{union|name}}Tag.{{field|name}}:
 {%-     if field.kind|is_union_kind %}
         var decoder1 = decoder0.decodePointer(offset + 8, {{field.kind|is_nullable_kind|dart_true_false}});
         result.{{field|name}} = {{field.kind|dart_type}}.decode(decoder1, 0);
@@ -77,7 +77,7 @@ class {{union|name}} extends bindings.Union {
     encoder0.encodeUint32(_tag_to_int[_tag], offset + 4);
     switch (_tag) {
 {%-   for field in union.fields %}
-      case {{union|name}}Tag.{{field|tag_name}}:
+      case {{union|name}}Tag.{{field|name}}:
 {%-     if field.kind|is_union_kind %}
         encoder0.encodeNestedUnion({{field|name}}, offset + 8, {{field.kind|is_nullable_kind|dart_true_false}});
 {%-     else %}
@@ -94,7 +94,7 @@ class {{union|name}} extends bindings.Union {
     String result = "{{union|name}}(";
     switch (_tag) {
 {%-   for field in union.fields %}
-      case {{union|name}}Tag.{{field|tag_name}}:
+      case {{union|name}}Tag.{{field|name}}:
         result += "{{field|name}}";
         break;
 {%-   endfor %}

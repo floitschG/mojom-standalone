@@ -35,7 +35,7 @@ abstract class {{interface|name}} {
 
 {#--- Interface Constants #}
 {% for constant in interface.constants %}
-  static const {{constant|name}} = {{constant.value|expression_to_text}};
+  static const {{constant.kind|dart_type}} {{constant|name}} = {{constant.resolved_value}};
 {%-   endfor %}
 }
 

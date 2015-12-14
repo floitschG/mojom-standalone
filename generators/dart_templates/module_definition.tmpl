@@ -1,6 +1,6 @@
 {#--- Constants #}
 {%-  for constant in module.constants %}
-const {{constant.name}} = {{constant.value|expression_to_text}};
+const {{constant.kind|dart_type}} {{constant|name}} = {{constant.resolved_value}};
 {%- endfor %}
 
 {#--- Enums #}

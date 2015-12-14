@@ -18,6 +18,54 @@ from mojom.generate.template_expander import UseJinja
 
 GENERATOR_PREFIX = 'dart'
 
+# CAUTION: To generate Dart-style names, and to avoid generating reserved words
+# for identifiers. The template files should generate names using
+# {{element|name}}, not {{element.name}}.
+
+# Reserved words from:
+# http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-408.pdf
+# We must not generated reserved words for identifiers.
+# NB: async, await, and yield are not technically reserved words, but since
+# they are not valid identifiers in all contexts, we include them here as well.
+_reserved_words = [
+  "assert",
+  "async",
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "default",
+  "do",
+  "else",
+  "enum",
+  "extends",
+  "false",
+  "final",
+  "finally",
+  "for",
+  "if",
+  "in",
+  "is",
+  "new",
+  "null",
+  "rethrow",
+  "return",
+  "super",
+  "switch",
+  "this",
+  "throw",
+  "true",
+  "try",
+  "var",
+  "void",
+  "while",
+  "with",
+  "yield",
+]
+
 _kind_to_dart_default_value = {
   mojom.BOOL:                  "false",
   mojom.INT8:                  "0",
@@ -188,47 +236,42 @@ def CamelCase(name):
   uccc = UpperCamelCase(name)
   return uccc[0].lower() + uccc[1:]
 
-def ConstantStyle(name):
-  components = NameToComponent(name)
-  if components[0] == 'k' and len(components) > 1:
-    components = components[1:]
-  # variable cannot starts with a digit.
-  if components[0][0].isdigit():
-    components[0] = '_' + components[0]
-  return '_'.join([x.upper() for x in components])
-
 def DotToUnderscore(name):
     return name.replace('.', '_')
 
-def GetNameForElement(element):
+# This may generate Dart reserved words. Call GetNameForElement to avoid
+# generating reserved words.
+def GetNameForElementUnsafe(element):
   if (mojom.IsInterfaceKind(element) or mojom.IsStructKind(element) or
       mojom.IsUnionKind(element)):
     return UpperCamelCase(element.name)
-  if mojom.IsEnumKind(element):
-    if element.parent_kind:
-      return ("%s%s" % (UpperCamelCase(element.parent_kind.name),
-                        UpperCamelCase(element.name)))
-    return UpperCamelCase(element.name)
   if mojom.IsInterfaceRequestKind(element):
     return GetNameForElement(element.kind)
-  if isinstance(element, (mojom.Method,
+  if isinstance(element, (mojom.Constant,
+                          mojom.EnumField,
+                          mojom.Field,
+                          mojom.Method,
+                          mojom.NamedValue,
                           mojom.Parameter,
-                          mojom.Field)):
+                          mojom.UnionField)):
     return CamelCase(element.name)
+  if mojom.IsEnumKind(element):
+    # If the enum is nested in some other mojom element, then we
+    # mangle the enum name by prepending it with the name of the containing
+    # element.
+    if element.parent_kind:
+      return ("%s%s" % (GetNameForElement(element.parent_kind),
+                        UpperCamelCase(element.name)))
+    return UpperCamelCase(element.name)
   if isinstance(element, mojom.EnumValue):
-    return (GetNameForElement(element.enum) + '.' +
-            ConstantStyle(element.name))
-  if isinstance(element, (mojom.NamedValue,
-                          mojom.Constant,
-                          mojom.EnumField)):
-    return ConstantStyle(element.name)
+    return (GetNameForElement(element.enum) + '.' + CamelCase(element.name))
   raise Exception('Unexpected element: %s' % element)
 
-def GetUnionFieldTagName(element):
-  if not isinstance(element, mojom.UnionField):
-    raise Exception('Unexpected element: %s is not a union field.' % element)
-
-  return CamelCase(element.name)
+def GetNameForElement(element):
+  name = GetNameForElementUnsafe(element)
+  if name in _reserved_words:
+    name = name + '_'
+  return name
 
 def GetInterfaceResponseName(method):
   return UpperCamelCase(method.name + 'Response')
@@ -327,18 +370,6 @@ def EncodeMethod(kind, variable, offset, bit):
   return '%s(%s)' % (methodName, ', '.join(params))
 
 def TranslateConstants(token):
-  if isinstance(token, (mojom.EnumValue, mojom.NamedValue)):
-    # Both variable and enum constants are constructed like:
-    # NamespaceUid.Struct.Enum_CONSTANT_NAME
-    name = ""
-    if token.imported_from:
-      name = token.imported_from["unique_name"] + "."
-    if token.parent_kind:
-      name = name + token.parent_kind.name + "."
-    if isinstance(token, mojom.EnumValue):
-      name = name + token.enum.name + "_"
-    return name + token.name
-
   if isinstance(token, mojom.BuiltinValue):
     if token.value == "double.INFINITY" or token.value == "float.INFINITY":
       return "double.INFINITY";
@@ -406,7 +437,6 @@ class Generator(generator.Generator):
     'decode_method': DecodeMethod,
     'default_value': DartDefaultValue,
     'encode_method': EncodeMethod,
-    'expression_to_text': ExpressionToText,
     'is_map_kind': mojom.IsMapKind,
     'is_nullable_kind': mojom.IsNullableKind,
     'is_pointer_array_kind': IsPointerArrayKind,
@@ -417,7 +447,6 @@ class Generator(generator.Generator):
     'dart_true_false': GetDartTrueFalse,
     'dart_type': DartDeclType,
     'name': GetNameForElement,
-    'tag_name': GetUnionFieldTagName,
     'interface_response_name': GetInterfaceResponseName,
     'dot_to_underscore': DotToUnderscore,
     'is_cloneable_kind': mojom.IsCloneableKind,

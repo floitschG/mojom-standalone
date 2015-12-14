@@ -36,6 +36,11 @@ def ResolveConstants(module, expression_to_text):
     in_progress.add(constant)
     if isinstance(constant.value, (mojom.EnumValue, mojom.ConstantValue)):
       resolved_value = GetResolvedValue(constant.value)
+    elif isinstance(constant.value, mojom.BuiltinValue):
+      resolved_value = expression_to_text(constant.value)
+    elif constant.kind in [mojom.FLOAT, mojom.DOUBLE]:
+      # Force float constants to have a decimal point.
+      resolved_value = expression_to_text(repr(float(constant.value)))
     else:
       resolved_value = expression_to_text(constant.value)
     constant.resolved_value = resolved_value
