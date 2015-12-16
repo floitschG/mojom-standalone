@@ -22,12 +22,12 @@ GENERATOR_PREFIX = 'dart'
 # for identifiers. The template files should generate names using
 # {{element|name}}, not {{element.name}}.
 
-# Reserved words from:
+# Dart reserved words from:
 # http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-408.pdf
 # We must not generated reserved words for identifiers.
 # NB: async, await, and yield are not technically reserved words, but since
 # they are not valid identifiers in all contexts, we include them here as well.
-_reserved_words = [
+_dart_reserved_words = [
   "assert",
   "async",
   "await",
@@ -64,6 +64,10 @@ _reserved_words = [
   "while",
   "with",
   "yield",
+]
+
+_reserved_words = _dart_reserved_words + [
+  "serviceName",
 ]
 
 _kind_to_dart_default_value = {
@@ -239,11 +243,19 @@ def CamelCase(name):
 def DotToUnderscore(name):
     return name.replace('.', '_')
 
+def IsParamStruct(kind):
+  assert(isinstance(kind, mojom.Struct))
+  return kind.name.endswith('_Params')
+
 # This may generate Dart reserved words. Call GetNameForElement to avoid
 # generating reserved words.
 def GetNameForElementUnsafe(element):
-  if (mojom.IsInterfaceKind(element) or mojom.IsStructKind(element) or
-      mojom.IsUnionKind(element)):
+  if (mojom.IsInterfaceKind(element) or mojom.IsUnionKind(element)):
+    return UpperCamelCase(element.name)
+  if mojom.IsStructKind(element):
+    if (IsParamStruct(element)):
+      # Param Structs are library private.
+      return '_' + UpperCamelCase(element.name)
     return UpperCamelCase(element.name)
   if mojom.IsInterfaceRequestKind(element):
     return GetNameForElement(element.kind)

@@ -1,13 +1,6 @@
 {%- for method in interface.methods %}
-const int k{{interface|name}}_{{method|name}}_name = {{method.ordinal}};
+const int _{{interface|name}}_{{method|name}}Name = {{method.ordinal}};
 {%- endfor %}
-
-{%- if interface.service_name %}
-const String {{interface|name}}Name = "{{interface.service_name}}";
-{%- else %}
-const String {{interface|name}}Name = null;
-{%- endif %}
-
 
 {#--- Interface Enums #}
 {%- from "enum_definition.tmpl" import enum_def -%}
@@ -16,6 +9,12 @@ const String {{interface|name}}Name = null;
 {%-  endfor %}
 
 abstract class {{interface|name}} {
+{%- if interface.service_name %}
+  static const String serviceName = "{{interface.service_name}}";
+{%- else %}
+  static const String serviceName = null;
+{%- endif %}
+
 {%- for method in interface.methods %}
 {%- if method.response_parameters == None %}
   void {{method|name}}(
@@ -24,7 +23,6 @@ abstract class {{interface|name}} {
     {%- endfor -%}
     );
 {%- else %}
-{%- set response_struct = method.response_param_struct %}
   dynamic {{method|name}}(
   {%- for parameter in method.parameters -%}
     {{parameter.kind|dart_type}} {{parameter|name}},
@@ -34,35 +32,33 @@ abstract class {{interface|name}} {
 {%- endfor %}
 
 {#--- Interface Constants #}
-{% for constant in interface.constants %}
+{%- for constant in interface.constants %}
   static const {{constant.kind|dart_type}} {{constant|name}} = {{constant.resolved_value}};
 {%-   endfor %}
 }
 
 
-class {{interface|name}}ProxyImpl extends bindings.Proxy {
-  {{interface|name}}ProxyImpl.fromEndpoint(
+class _{{interface|name}}ProxyImpl extends bindings.Proxy {
+  _{{interface|name}}ProxyImpl.fromEndpoint(
       core.MojoMessagePipeEndpoint endpoint) : super.fromEndpoint(endpoint);
 
-  {{interface|name}}ProxyImpl.fromHandle(core.MojoHandle handle) :
+  _{{interface|name}}ProxyImpl.fromHandle(core.MojoHandle handle) :
       super.fromHandle(handle);
 
-  {{interface|name}}ProxyImpl.unbound() : super.unbound();
+  _{{interface|name}}ProxyImpl.unbound() : super.unbound();
 
-  static {{interface|name}}ProxyImpl newFromEndpoint(
+  static _{{interface|name}}ProxyImpl newFromEndpoint(
       core.MojoMessagePipeEndpoint endpoint) {
-    assert(endpoint.setDescription("For {{interface|name}}ProxyImpl"));
-    return new {{interface|name}}ProxyImpl.fromEndpoint(endpoint);
+    assert(endpoint.setDescription("For _{{interface|name}}ProxyImpl"));
+    return new _{{interface|name}}ProxyImpl.fromEndpoint(endpoint);
   }
-
-  String get name => {{interface|name}}Name;
 
   void handleResponse(bindings.ServiceMessage message) {
     switch (message.header.type) {
 {%- for method in interface.methods %}
 {%- if method.response_parameters != None %}
 {%- set response_struct = method.response_param_struct %}
-      case k{{interface|name}}_{{method|name}}_name:
+      case _{{interface|name}}_{{method|name}}Name:
         var r = {{response_struct|name}}.deserialize(
             message.payload);
         if (!message.header.hasRequestId) {
@@ -93,13 +89,13 @@ class {{interface|name}}ProxyImpl extends bindings.Proxy {
 
   String toString() {
     var superString = super.toString();
-    return "{{interface|name}}ProxyImpl($superString)";
+    return "_{{interface|name}}ProxyImpl($superString)";
   }
 }
 
 
 class _{{interface|name}}ProxyCalls implements {{interface|name}} {
-  {{interface|name}}ProxyImpl _proxyImpl;
+  _{{interface|name}}ProxyImpl _proxyImpl;
 
   _{{interface|name}}ProxyCalls(this._proxyImpl);
 
@@ -119,10 +115,9 @@ class _{{interface|name}}ProxyCalls implements {{interface|name}} {
   {%- for parameter in method.parameters %}
       params.{{parameter|name}} = {{parameter|name}};
   {%- endfor %}
-      _proxyImpl.sendMessage(params, k{{interface|name}}_{{method|name}}_name);
+      _proxyImpl.sendMessage(params, _{{interface|name}}_{{method|name}}Name);
     }
-  {% else %}
-  {%- set response_struct = method.response_param_struct %}
+  {%- else %}
   {%- set request_struct = method.param_struct %}
     dynamic {{method|name}}(
   {%- for parameter in method.parameters -%}
@@ -135,7 +130,7 @@ class _{{interface|name}}ProxyCalls implements {{interface|name}} {
   {%- endfor %}
       return _proxyImpl.sendMessageWithRequestId(
           params,
-          k{{interface|name}}_{{method|name}}_name,
+          _{{interface|name}}_{{method|name}}Name,
           -1,
           bindings.MessageHeader.kMessageExpectsResponse);
     }
@@ -147,25 +142,24 @@ class _{{interface|name}}ProxyCalls implements {{interface|name}} {
 class {{interface|name}}Proxy implements bindings.ProxyBase {
   final bindings.Proxy impl;
   {{interface|name}} ptr;
-  final String name = {{interface|name}}Name;
 
-  {{interface|name}}Proxy({{interface|name}}ProxyImpl proxyImpl) :
+  {{interface|name}}Proxy(_{{interface|name}}ProxyImpl proxyImpl) :
       impl = proxyImpl,
       ptr = new _{{interface|name}}ProxyCalls(proxyImpl);
 
   {{interface|name}}Proxy.fromEndpoint(
       core.MojoMessagePipeEndpoint endpoint) :
-      impl = new {{interface|name}}ProxyImpl.fromEndpoint(endpoint) {
+      impl = new _{{interface|name}}ProxyImpl.fromEndpoint(endpoint) {
     ptr = new _{{interface|name}}ProxyCalls(impl);
   }
 
   {{interface|name}}Proxy.fromHandle(core.MojoHandle handle) :
-      impl = new {{interface|name}}ProxyImpl.fromHandle(handle) {
+      impl = new _{{interface|name}}ProxyImpl.fromHandle(handle) {
     ptr = new _{{interface|name}}ProxyCalls(impl);
   }
 
   {{interface|name}}Proxy.unbound() :
-      impl = new {{interface|name}}ProxyImpl.unbound() {
+      impl = new _{{interface|name}}ProxyImpl.unbound() {
     ptr = new _{{interface|name}}ProxyCalls(impl);
   }
 
@@ -181,6 +175,8 @@ class {{interface|name}}Proxy implements bindings.ProxyBase {
     assert(endpoint.setDescription("For {{interface|name}}Proxy"));
     return new {{interface|name}}Proxy.fromEndpoint(endpoint);
   }
+
+  String get serviceName => {{interface|name}}.serviceName;
 
   Future close({bool immediate: false}) => impl.close(immediate: immediate);
 
@@ -220,8 +216,6 @@ class {{interface|name}}Stub extends bindings.Stub {
     return new {{interface|name}}Stub.fromEndpoint(endpoint);
   }
 
-  static const String name = {{interface|name}}Name;
-
 {% for method in interface.methods %}
 {%- if method.response_parameters != None %}
 {%- set response_struct = method.response_param_struct %}
@@ -249,7 +243,7 @@ class {{interface|name}}Stub extends bindings.Stub {
     switch (message.header.type) {
 {%- for method in interface.methods %}
 {%- set request_struct = method.param_struct %}
-      case k{{interface|name}}_{{method|name}}_name:
+      case _{{interface|name}}_{{method|name}}Name:
         var params = {{request_struct|name}}.deserialize(
             message.payload);
 {%- if method.response_parameters == None %}
@@ -270,7 +264,7 @@ class {{interface|name}}Stub extends bindings.Stub {
             if (response != null) {
               return buildResponseWithId(
                   response,
-                  k{{interface|name}}_{{method|name}}_name,
+                  _{{interface|name}}_{{method|name}}Name,
                   message.header.requestId,
                   bindings.MessageHeader.kMessageIsResponse);
             }
@@ -278,7 +272,7 @@ class {{interface|name}}Stub extends bindings.Stub {
         } else if (response != null) {
           return buildResponseWithId(
               response,
-              k{{interface|name}}_{{method|name}}_name,
+              _{{interface|name}}_{{method|name}}Name,
               message.header.requestId,
               bindings.MessageHeader.kMessageIsResponse);
         }
