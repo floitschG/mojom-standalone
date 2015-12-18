@@ -25,12 +25,17 @@ def RunParser(args):
     {str} The serialized mojom_files.MojomFileGraph returned by mojom parser,
     or None if the mojom parser returned a non-zero error code.
   """
-  if platform.system() != "Linux" or platform.architecture()[0] != "64bit":
-    raise Exception("The mojom parser currently only works on Linux 64 bits.")
+  system_dirs = {
+      ("Linux", "64bits"): "linux64",
+      ("Darwin", "64bits"): "mac64",
+
+      }
+  system = (platform.system(), platform.architecture()[0])
+  if system not in system_dirs:
+    raise Exception("The mojom parser only supports Linux or Mac 64 bits.")
 
   mojom_parser = os.path.join(BINDINGS_DIR,
-      "mojom_parser", "bin", "linux64", "mojom_parser")
-  # TODO(azani): Automatically detect the OS and select the right binary.
+      "mojom_parser", "bin", system_dirs[system], "mojom_parser")
 
   if args.mojom_parser:
     mojom_parser = args.mojom_parser
