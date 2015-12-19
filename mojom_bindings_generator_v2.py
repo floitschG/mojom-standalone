@@ -26,9 +26,8 @@ def RunParser(args):
     or None if the mojom parser returned a non-zero error code.
   """
   system_dirs = {
-      ("Linux", "64bits"): "linux64",
-      ("Darwin", "64bits"): "mac64",
-
+      ("Linux", "64bit"): "linux64",
+      ("Darwin", "64bit"): "mac64",
       }
   system = (platform.system(), platform.architecture()[0])
   if system not in system_dirs:
