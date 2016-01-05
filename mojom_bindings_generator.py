@@ -20,7 +20,7 @@ import mojom_bindings_generator_v2
 def main():
   parser = argparse.ArgumentParser(
       description="Generate bindings from mojom files.", add_help=False)
-  parser.add_argument("--compiler-version", type=int, default=1,
+  parser.add_argument("--compiler-version", type=int, default=2,
                       help="Which compiler version should be used?")
   (args, remaining_args) = parser.parse_known_args()
 

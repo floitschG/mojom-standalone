@@ -78,11 +78,8 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
       "--depth": args.depth,
       }
 
-  if args.py_bindings_dir:
-    cmd_args["--python-bindings-dir"] = args.py_bindings_dir
-  else:
-    cmd_args["--python-bindings-dir"] = os.path.join(
-        args.depth, "mojo", "public", "python")
+  if args.python_sdk_dir:
+    cmd_args["--python-sdk-dir"] = args.python_sdk_dir
 
   for name, value in cmd_args.iteritems():
     cmd.extend([name, value])
@@ -119,7 +116,7 @@ def main(argv):
                       help="Location of the mojom parser.")
   parser.add_argument("--use_bundled_pylibs", action="store_true",
                       help="use Python modules bundled in the SDK")
-  parser.add_argument("-p", "--python-bindings-dir", dest="py_bindings_dir",
+  parser.add_argument("-p", "--python-sdk-dir", dest="python_sdk_dir",
                       help="Location of the compiled python bindings",
                       default="")
   (args, remaining_args) = parser.parse_known_args(argv)

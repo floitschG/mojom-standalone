@@ -6,7 +6,7 @@ import("../../mojo_sdk.gni")
 
 # TODO(azani): Remove when the switch to the new compiler is complete.
 declare_args() {
-  use_new_mojom_compiler = false
+  use_old_mojom_compiler = false
 }
 
 # Generate C++/JavaScript/Java/Python/Dart/Go source files from mojom files. The
@@ -200,13 +200,7 @@ template("mojom") {
       ]
 
       # TODO(azani): Remove when the switch to the new compiler is complete.
-      if (use_new_mojom_compiler) {
-        args += [
-          "--compiler-version=2",
-          "--python-bindings-dir",
-          rebase_path("$mojo_root/mojo/public/python"),
-        ]
-      } else {
+      if (use_old_mojom_compiler) {
         args += [ "--compiler-version=1" ]
       }
 

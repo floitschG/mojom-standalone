@@ -5,9 +5,6 @@
 #
 # This script accepts the output of version 2 of the mojom parser and uses that
 # data to invoke the code generators.
-#
-# This script is not related mojom_bindings_generator.py (which is part of v1
-# of the mojom parser pipeline).
 
 import argparse
 import imp
@@ -28,7 +25,7 @@ def _ParseCLIArgs():
   parser.add_argument('-f', '--file-graph', dest='file_graph',
                       help='Location of the parser output. "-" for stdin. '
                       '(default "-")', default='-')
-  parser.add_argument('-p', '--python-bindings-dir', dest='py_bindings_dir',
+  parser.add_argument('-p', '--python-sdk-dir', dest='python_sdk_dir',
                       default=None,
                       help='Location of the compiled python bindings')
   parser.add_argument("-o", "--output-dir", dest="output_dir", default=".",
@@ -42,21 +39,26 @@ def _ParseCLIArgs():
 
   return parser.parse_known_args()
 
+# We assume this script is located in the Mojo SDK in tools/bindings.
+THIS_DIR = os.path.abspath(os.path.dirname(__file__))
+SDK_ROOT = os.path.abspath(os.path.join(THIS_DIR, os.pardir, os.pardir))
+PYTHON_SDK_DIR = os.path.abspath(os.path.join(SDK_ROOT, "python"))
 
 def _FixPath():
-  # We need to parse command line args before imports so we can find out where
-  # the python bindings are located and add them to sys.path.
+  # We parse command line args before imports in case the caller wishes to
+  # specify an alternative location for the Mojo Python SDK.
+  # TODO(rudominer) Consider removing this flexibility as I can think of
+  # no good reason for it.
   args, _ = _ParseCLIArgs()
-  py_bindings_dir = args.py_bindings_dir
-  if not py_bindings_dir:
-    py_bindings_dir = os.path.join(os.path.dirname(args.output_dir), "python")
-  sys.path.insert(0, py_bindings_dir)
+  python_sdk_dir = args.python_sdk_dir
+  if not python_sdk_dir:
+    python_sdk_dir = PYTHON_SDK_DIR
+  sys.path.insert(0, python_sdk_dir)
   # In order to use mojom_files_mojom we need to make sure the dummy mojo_system
   # can be found on the python path.
-  sys.path.insert(0, os.path.join(py_bindings_dir, "dummy_mojo_system"))
+  sys.path.insert(0, os.path.join(python_sdk_dir, "dummy_mojo_system"))
 
-  sys.path.insert(0, os.path.join(os.path.dirname(
-      os.path.abspath(__file__)), "pylib"))
+  sys.path.insert(0, os.path.join(THIS_DIR, "pylib"))
 
 
 _FixPath()
