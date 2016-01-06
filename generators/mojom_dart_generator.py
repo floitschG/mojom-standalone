@@ -4,6 +4,7 @@
 
 """Generates dart source files from a mojom.Module."""
 
+import errno
 import os
 import re
 import shutil
@@ -511,8 +512,14 @@ class Generator(generator.Generator):
 
     link = self.MatchMojomFilePath("%s.dart" % self.module.name)
     full_link_path = os.path.join(self.output_dir, link)
-    if os.path.exists(full_link_path):
+    try:
       os.unlink(full_link_path)
+    except OSError, exc:
+      # If the file does not exist, ignore the error.
+      if errno.ENOENT == exc.errno:
+        pass
+      else:
+        raise
     fileutil.EnsureDirectoryExists(os.path.dirname(full_link_path))
     try:
       if sys.platform == "win32":
