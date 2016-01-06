@@ -142,6 +142,8 @@ class MojomProcessor(object):
           prefix = '--' + generator_module.GENERATOR_PREFIX + '_'
           filtered_args = [arg for arg in remaining_args
                            if arg.startswith(prefix)]
+        if args.generate_type_info:
+          filtered_args.append("--generate_type_info")
         generator.GenerateFiles(filtered_args)
 
     # Save result.
@@ -204,6 +206,13 @@ def main(argv):
                       help="add a directory to be searched for import files")
   parser.add_argument("--use_bundled_pylibs", action="store_true",
                       help="use Python modules bundled in the SDK")
+  parser.add_argument("--generate-type-info", dest="generate_type_info",
+                      action="store_true",
+                      help="generate mojom type descriptors")
+  parser.add_argument("--no-generate-type-info", dest="generate_type_info",
+                      action="store_false",
+                      help="do not generate mojom type descriptors")
+  parser.set_defaults(generate_type_info=True)
   (args, remaining_args) = parser.parse_known_args(argv)
 
   generator_modules = LoadGenerators(args.generators_string)

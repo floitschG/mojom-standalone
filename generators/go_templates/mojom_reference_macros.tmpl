@@ -3,18 +3,7 @@
 // found in the LICENSE file.
 
 {%- macro registerType(mapping, typepkg, pkg, type) -%}
-{%- if type|identifier|identifier_check('RegisterType') -%}{# Already printed out #}
-{%- elif type|package != '' -%} {# Don't print. That package will do it. #}
-{%- else -%}
-{{type|identifier|identifier_store('RegisterType')}}
-
-{%- if type|mojom_type(typepkg) != "" -%}{#- simple kind case: do nothing -#}
-{%- elif type|is_array -%}
-{{registerType(mapping, typepkg, pkg, type.kind)}}
-{%- elif type|is_map -%}
-{{registerType(mapping, typepkg, pkg, type.key_kind)}}
-{{registerType(mapping, typepkg, pkg, type.value_kind)}}
-{% elif type|is_enum %}
+{% if type|is_enum %}
   {{mapping}}["{{type|mojom_type_identifier}}"] = &{{typepkg}}UserDefinedTypeEnumType{
     Value: {{type|mojom_type_identifier}}(),
   }
@@ -22,16 +11,10 @@
   {{mapping}}["{{type|mojom_type_identifier}}"] = &{{typepkg}}UserDefinedTypeStructType{
     Value: {{type|mojom_type_identifier}}(),
   }
-  {% for field in type.fields %}
-{{registerType(mapping, typepkg, pkg, field.kind)}}
-  {% endfor %}
 {% elif type|is_union %}
   {{mapping}}["{{type|mojom_type_identifier}}"] = &{{typepkg}}UserDefinedTypeUnionType{
     Value: {{type|mojom_type_identifier}}(),
   }
-  {% for field in type.fields %}
-{{registerType(mapping, typepkg, pkg, field.kind)}}
-  {% endfor %}
 {% elif type|is_interface %}
   {{mapping}}["{{type|mojom_type_identifier}}"] = &{{typepkg}}UserDefinedTypeInterfaceType{
     Value: {{type|mojom_type_identifier}}(),
@@ -42,10 +25,7 @@
 {{registerType(mapping, typepkg, pkg, method.response_param_struct)}}
   {%- endif %}
   {%- endfor %}
-{% elif type|is_interface_request -%} {# No need to register anything #}
 {%- else -%}
-  ERROR: UNSUPPORTED TYPE
-  {{type|identifier}}
-{%- endif -%}
+  {# Simple kinds, arrays, maps, and handles do not need to be registered. #}
 {%- endif -%}
 {%- endmacro -%}

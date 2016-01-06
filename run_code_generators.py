@@ -36,6 +36,13 @@ def _ParseCLIArgs():
                       help="comma-separated list of generators")
   parser.add_argument("-d", "--depth", dest="depth", default=".",
                       help="relative path to the root of the source tree.")
+  parser.add_argument("--generate-type-info", dest="generate_type_info",
+                      action="store_true",
+                      help="generate mojom type descriptors")
+  parser.add_argument("--no-generate-type-info", dest="generate_type_info",
+                      action="store_false",
+                      help="do not generate mojom type descriptors")
+  parser.set_defaults(generate_type_info=True)
 
   return parser.parse_known_args()
 
@@ -164,6 +171,8 @@ def main():
         prefix = '--' + generator_module.GENERATOR_PREFIX + '_'
         filtered_args = [arg for arg in remaining_args
                          if arg.startswith(prefix)]
+      if args.generate_type_info:
+        filtered_args.append("--generate_type_info")
 
       generator.GenerateFiles(filtered_args)
 

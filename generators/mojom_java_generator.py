@@ -497,6 +497,8 @@ class Generator(generator.Generator):
   def GenerateFiles(self, unparsed_args):
     parser = argparse.ArgumentParser()
     parser.add_argument('--java_output_directory', dest='java_output_directory')
+    parser.add_argument('--generate_type_info', dest='generate_type_info',
+                        action="store_true")
     args = parser.parse_args(unparsed_args)
     package_path = GetPackage(self.module).replace('.', '/')
 

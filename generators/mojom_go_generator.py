@@ -307,36 +307,20 @@ def AddImport(imports, mojom_imports, module, element):
   imports[path] = name
   mojom_imports[path] = name
 
-# The identifier cache is used by the Type generator to determine if a type has
-# already been generated or not. This prevents over-generation of the same type
-# when it is referred to in multiple ways.
-identifier_cache = {}
 def GetIdentifier(kind):
-  # Use the kind's module to determine the package name.
+  """Use the kind's module to determine the package and name."""
+  # Note: InterfaceRequest's should use the Interface inside them.
   if hasattr(kind, 'module'):
     package = GetPackageName(kind.module)
+    name = kind.name
   elif mojom.IsInterfaceRequestKind(kind):
     package = GetPackageName(kind.kind.module)
+    name = kind.kind.name
   else:
-    return ''
+    # These kinds (e.g., simple kinds, maps, and arrays) lack identifiers.
+    raise Exception('Unexpected kind: %s' % kind)
 
-  # Most kinds have a name, but those that don't should rely on their spec.
-  # Since spec can have : and ? characters, these must be replaced. Since ? is
-  # replaced with '', the caller must keep track of optionality on its own.
-  name_or_spec = (kind.name if hasattr(kind, 'name') else kind.spec)
-  package_unique = name_or_spec.replace(':', '_').replace('?', '')
-  return '%s_%s' % (package, package_unique)
-
-def StoreIdentifier(identifier, cache_name):
-  if not cache_name in identifier_cache:
-    identifier_cache[cache_name] = {}
-  identifier_cache[cache_name][identifier] = True
-  return ''
-
-def CheckIdentifier(identifier, cache_name):
-  if not cache_name in identifier_cache:
-    identifier_cache[cache_name] = {}
-  return identifier in identifier_cache[cache_name]
+  return '%s_%s' % (package, name)
 
 # Get the mojom type's identifier suffix.
 def GetMojomTypeIdentifier(kind):
@@ -353,8 +337,6 @@ class Generator(generator.Generator):
     'expression_to_text': ExpressionToText,
     'has_response': lambda method: method.response_parameters is not None,
     'identifier': GetIdentifier,
-    'identifier_check': CheckIdentifier,
-    'identifier_store': StoreIdentifier,
     'is_array': mojom.IsArrayKind,
     'is_enum': mojom.IsEnumKind,
     'is_handle': mojom.IsAnyHandleKind,
@@ -377,9 +359,8 @@ class Generator(generator.Generator):
     'tab_indent': lambda s, size = 1: ('\n' + '\t' * size).join(s.splitlines())
   }
 
-  # TODO: This value should be settable via arguments. If False, then mojom type
-  # information will not be generated.
-  should_gen_mojom_types = True
+  # If set to True, then mojom type information will be generated.
+  should_gen_mojom_types = False
 
   def GetParameters(self):
     package = GetPackageName(self.module)
@@ -403,6 +384,8 @@ class Generator(generator.Generator):
     return self.GetParameters()
 
   def GenerateFiles(self, args):
+    self.should_gen_mojom_types = "--generate_type_info" in args
+
     self.Write(self.GenerateSource(), os.path.join("go", "src",
         GetPackagePath(self.module), "%s.go" % self.module.name))
 

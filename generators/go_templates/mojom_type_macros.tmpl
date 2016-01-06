@@ -3,10 +3,6 @@
 // found in the LICENSE file.
 
 {%- macro writeMojomType(typepkg, type, pkg, exported=true, topLevel=true) -%}
-{%- if type|identifier|identifier_check('WriteMojomType') -%} {#- Already printed out -#}
-{{writeTypeTypeReference(typepkg, type, pkg)}}
-{%- else -%}
-
 {%- if type|mojom_type(typepkg) != "" -%}{#- simple kind case -#}
   &{{type|mojom_type(typepkg)}}
 {%- elif type|is_array -%}
@@ -15,7 +11,6 @@
   &{{writeTypeMapType(typepkg, type, pkg, exported)}}
 {%- elif type|is_enum or type|is_struct or type|is_union -%}
   {%- if topLevel -%}
-  {{- type|identifier|identifier_store('WriteMojomType') -}}
     {%- if type|is_enum -%}
       {{writeMojomEnumType(typepkg, type, pkg, exported)}}
     {%- elif type|is_struct -%}
@@ -27,11 +22,9 @@
   {{writeTypeTypeReference(typepkg, type, pkg)}}
   {%- endif -%}
 {%- elif type|is_interface or type|is_interface_request -%}
-  {{- type|identifier|identifier_store('WriteMojomType') -}}
   {{writeTypeTypeReference(typepkg, type, pkg)}}
 {%- else -%}
   ERROR: UNSUPPORTED TYPE
-{%- endif -%}
 {%- endif -%}
 {%- endmacro -%}
 
