@@ -197,6 +197,7 @@ template("mojom") {
         rebase_path(mojo_root, root_build_dir),
         "-o",
         rebase_path(root_gen_dir),
+        "--no-gen-imports",
       ]
 
       # TODO(azani): Remove when the switch to the new compiler is complete.

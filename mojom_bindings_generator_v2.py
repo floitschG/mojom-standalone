@@ -83,10 +83,14 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
 
   for name, value in cmd_args.iteritems():
     cmd.extend([name, value])
+  if args.no_gen_imports:
+    cmd.extend("--no-gen-imports")
 
   # Some language-specific args may be found in remaining_args. See
   # run_code_generators.py and look for GENERATOR_PREFIX for more information.
   cmd.extend(remaining_args)
+  if not args.no_gen_imports:
+    cmd.extend(args.filename)
 
   process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
   process.communicate(serialized_file_graph)
@@ -119,6 +123,11 @@ def main(argv):
   parser.add_argument("-p", "--python-sdk-dir", dest="python_sdk_dir",
                       help="Location of the compiled python bindings",
                       default="")
+  parser.add_argument("--no-gen-imports", action="store_true",
+                      help="Generate code only for the files that are "
+                      "specified on the command line. By default, code "
+                      "is generated for all specified files and their "
+                      "transitive imports.")
   (args, remaining_args) = parser.parse_known_args(argv)
 
   serialized_file_graph = RunParser(args)

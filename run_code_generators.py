@@ -22,6 +22,9 @@ def _ParseCLIArgs():
   """
   parser = argparse.ArgumentParser(
       description='Generate bindings from mojom parser output.')
+  parser.add_argument('filenames', nargs='*',
+                      help='Filter on the set of .mojom files for which code '
+                      'will be generated.')
   parser.add_argument('-f', '--file-graph', dest='file_graph',
                       help='Location of the parser output. "-" for stdin. '
                       '(default "-")', default='-')
@@ -36,6 +39,11 @@ def _ParseCLIArgs():
                       help="comma-separated list of generators")
   parser.add_argument("-d", "--depth", dest="depth", default=".",
                       help="relative path to the root of the source tree.")
+  parser.add_argument("--no-gen-imports", action="store_true",
+                      help="Generate code only for the files that are "
+                      "specified on the command line. By default, code "
+                      "is generated for all specified files and their "
+                      "transitive imports.")
   parser.add_argument("--generate-type-info", dest="generate_type_info",
                       action="store_true",
                       help="generate mojom type descriptors")
@@ -159,8 +167,16 @@ def main():
   modules = mojom_translator.TranslateFileGraph(mojom_file_graph)
 
   generator_modules = LoadGenerators(args.generators_string)
+  filenames = set(os.path.basename(filename) for filename in args.filenames)
 
   for _, module in modules.iteritems():
+    # If filenames are specified on the command line, only generate code for
+    # the specified mojom files.
+    # TODO(azani): This is not as robust as we would like since files with the
+    # same name but different paths or files resolved through links might not
+    # be correctly identified by module.name.
+    if args.no_gen_imports and filenames and module.name not in filenames:
+      continue
     FixModulePath(module, os.path.abspath(args.depth))
     for generator_module in generator_modules:
       generator = generator_module.Generator(module, args.output_dir)
