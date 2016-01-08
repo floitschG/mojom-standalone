@@ -84,13 +84,12 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
   for name, value in cmd_args.iteritems():
     cmd.extend([name, value])
   if args.no_gen_imports:
-    cmd.extend("--no-gen-imports")
+    cmd.append("--no-gen-imports")
 
   # Some language-specific args may be found in remaining_args. See
   # run_code_generators.py and look for GENERATOR_PREFIX for more information.
   cmd.extend(remaining_args)
-  if not args.no_gen_imports:
-    cmd.extend(args.filename)
+  cmd.extend(args.filename)
 
   process = subprocess.Popen(cmd, stdin=subprocess.PIPE)
   process.communicate(serialized_file_graph)
