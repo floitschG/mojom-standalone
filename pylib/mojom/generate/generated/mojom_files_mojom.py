@@ -12,10 +12,11 @@ class MojomFile(object):
   DESCRIPTOR = {
     'fields': [
       _descriptor.SingleFieldGroup('file_name', _descriptor.TYPE_STRING, 0, 0),
-      _descriptor.SingleFieldGroup('module_namespace', _descriptor.TYPE_NULLABLE_STRING, 1, 0),
-      _descriptor.SingleFieldGroup('attributes', _descriptor.GenericArrayType(_descriptor.StructType(lambda: mojom_types_mojom.Attribute), nullable=True), 2, 0),
-      _descriptor.SingleFieldGroup('imports', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 3, 0),
-      _descriptor.SingleFieldGroup('declared_mojom_objects', _descriptor.StructType(lambda: KeysByType), 4, 0),
+      _descriptor.SingleFieldGroup('specified_file_name', _descriptor.TYPE_NULLABLE_STRING, 1, 0),
+      _descriptor.SingleFieldGroup('module_namespace', _descriptor.TYPE_NULLABLE_STRING, 2, 0),
+      _descriptor.SingleFieldGroup('attributes', _descriptor.GenericArrayType(_descriptor.StructType(lambda: mojom_types_mojom.Attribute), nullable=True), 3, 0),
+      _descriptor.SingleFieldGroup('imports', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 4, 0),
+      _descriptor.SingleFieldGroup('declared_mojom_objects', _descriptor.StructType(lambda: KeysByType), 5, 0),
     ],
   }
 
