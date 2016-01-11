@@ -28,6 +28,7 @@ import os
 from generated import mojom_files_mojom
 from generated import mojom_types_mojom
 import module
+import operator
 
 
 class FileTranslator(object):
@@ -392,8 +393,13 @@ class FileTranslator(object):
     interface.name = mojom_interface.interface_name
     interface.spec = interface.name
 
+    # Translate the dictionary of methods into a list of module.Methods.
+    # In order to have a deterministic ordering we sort by method ordinal.
+    # TODO(rudominer) Consider ordering by declaration order instead once
+    # this field is populated by the front-end.
     interface.methods = [self.MethodFromMojom(mojom_method, interface)
-        for mojom_method in mojom_interface.methods.itervalues()]
+        for ordinal, mojom_method in sorted(mojom_interface.methods.iteritems(),
+          key=operator.itemgetter(0))]
     self.PopulateContainedDeclarationsFromMojom(
         interface, mojom_interface.decl_data.contained_declarations)
 

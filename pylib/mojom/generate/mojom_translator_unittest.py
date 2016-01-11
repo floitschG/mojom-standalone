@@ -498,14 +498,29 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
           source_file_info=mojom_types_mojom.SourceFileInfo(
             file_name=file_name)),
         interface_name='AnInterface')
-    mojom_method = mojom_types_mojom.MojomMethod(
+    mojom_method10 = mojom_types_mojom.MojomMethod(
         ordinal=10,
         decl_data=mojom_types_mojom.DeclarationData(
-          short_name='AMethod',
+          short_name='AMethod10',
           source_file_info=mojom_types_mojom.SourceFileInfo(
             file_name=file_name)),
         parameters=mojom_types_mojom.MojomStruct(fields=[]))
-    mojom_interface.methods = {10: mojom_method}
+    mojom_method0 = mojom_types_mojom.MojomMethod(
+        ordinal=0,
+        decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AMethod0',
+          source_file_info=mojom_types_mojom.SourceFileInfo(
+            file_name=file_name)),
+        parameters=mojom_types_mojom.MojomStruct(fields=[]))
+    mojom_method7 = mojom_types_mojom.MojomMethod(
+        ordinal=7,
+        decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AMethod10',
+          source_file_info=mojom_types_mojom.SourceFileInfo(
+            file_name=file_name)),
+        parameters=mojom_types_mojom.MojomStruct(fields=[]))
+    mojom_interface.methods = {10: mojom_method10, 0: mojom_method0,
+        7: mojom_method7}
 
     interface = module.Interface()
     graph = mojom_files_mojom.MojomFileGraph()
@@ -515,7 +530,9 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
 
     self.assertEquals(translator._module, interface.module)
     self.assertEquals(mojom_interface.interface_name, interface.name)
-    self.assertEquals(mojom_method.ordinal, interface.methods[0].ordinal)
+    self.assertEquals(0, interface.methods[0].ordinal)
+    self.assertEquals(7, interface.methods[1].ordinal)
+    self.assertEquals(10, interface.methods[2].ordinal)
     # TODO(azani): Add the contained declarations.
 
   def test_method(self):
