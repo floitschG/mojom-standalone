@@ -167,7 +167,6 @@ def main():
   modules = mojom_translator.TranslateFileGraph(mojom_file_graph)
 
   generator_modules = LoadGenerators(args.generators_string)
-  filenames = set(os.path.basename(filename) for filename in args.filenames)
 
   for _, module in modules.iteritems():
     # If filenames are specified on the command line, only generate code for
@@ -175,7 +174,7 @@ def main():
     # TODO(azani): This is not as robust as we would like since files with the
     # same name but different paths or files resolved through links might not
     # be correctly identified by module.name.
-    if args.no_gen_imports and filenames and module.name not in filenames:
+    if args.no_gen_imports and not module.specified_name:
       continue
     FixModulePath(module, os.path.abspath(args.depth))
     for generator_module in generator_modules:

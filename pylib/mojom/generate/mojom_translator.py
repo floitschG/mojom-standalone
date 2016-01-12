@@ -97,6 +97,13 @@ class FileTranslator(object):
       mojom_file: {MojomFile} the file to be translated.
     """
     mod.name = os.path.basename(mojom_file.file_name)
+    # specified_file_name is the file name specified on the command line if one
+    # was specified. The mojom parser sets specified_file_name to the empty
+    # string if the file was parsed only because the file was imported by
+    # another file. While specified_file_name can be None, the mojom parser
+    # should not set it to None, so we check for that error here.
+    assert mojom_file.specified_file_name is not None
+    mod.specified_name = mojom_file.specified_file_name
     mod.path = mojom_file.file_name
     mod.namespace = mojom_file.module_namespace
     # Note that attribute values are typed. That is why we use

@@ -24,12 +24,15 @@ class TranslateFileGraph(unittest.TestCase):
     g.files = {
         'a.mojom': mojom_files_mojom.MojomFile(
             file_name='a.mojom',
+            specified_file_name='',
             imports=[]),
         'b.mojom': mojom_files_mojom.MojomFile(
             file_name='b.mojom',
+            specified_file_name='',
             imports=[]),
         'root/c.mojom': mojom_files_mojom.MojomFile(
             file_name='root/c.mojom',
+            specified_file_name='',
             imports=[]),
     }
 
@@ -49,14 +52,17 @@ class TestTranslateFile(unittest.TestCase):
     second_level_imported_file_name = 'something/other.mojom'
     mojom_file = mojom_files_mojom.MojomFile(
         file_name=file_name,
+        specified_file_name='specified_file_name',
         module_namespace='somens',
         imports=[imported_file_name])
     imported_file = mojom_files_mojom.MojomFile(
         file_name=imported_file_name,
+        specified_file_name='',
         module_namespace='somens',
         imports=[second_level_imported_file_name])
     second_level_imported_file = mojom_files_mojom.MojomFile(
         file_name=second_level_imported_file_name,
+        specified_file_name='',
         module_namespace='somens')
     graph.files = {
         file_name: mojom_file,
@@ -123,6 +129,7 @@ class TestTranslateFile(unittest.TestCase):
     mod = mojom_translator.FileTranslator(graph, file_name).Translate()
 
     self.assertEquals('f.mojom', mod.name)
+    self.assertEquals(mojom_file.specified_file_name, mod.specified_name)
     self.assertEquals(mojom_file.file_name, mod.path)
     self.assertEquals(mojom_file.module_namespace, mod.namespace)
 
@@ -153,12 +160,17 @@ class TestTranslateFile(unittest.TestCase):
     self.assertEquals(mojom_enum.decl_data.short_name, mod.enums[0].name)
     self.assertEquals(mojom_const.decl_data.short_name, mod.constants[0].name)
 
+    imported_mod = mojom_translator.FileTranslator(
+        graph, imported_file_name).Translate()
+    self.assertFalse(imported_mod.specified_name)
+
   def test_no_imports(self):
     graph = mojom_files_mojom.MojomFileGraph(
         resolved_types={})
     file_name = 'root/f.mojom'
     mojom_file = mojom_files_mojom.MojomFile(
         file_name=file_name,
+        specified_file_name='',
         module_namespace='somens')
     graph.files = { file_name: mojom_file }
 
@@ -457,10 +469,12 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
     graph.files = {
         'a.mojom': mojom_files_mojom.MojomFile(
             file_name='a.mojom',
+            specified_file_name='',
             module_namespace='namespace',
             imports=['root/c.mojom']),
         'root/c.mojom': mojom_files_mojom.MojomFile(
             file_name='root/c.mojom',
+            specified_file_name='',
             module_namespace='otherns',
             imports=[]),
     }
