@@ -205,6 +205,12 @@ template("mojom") {
         args += [ "--compiler-version=1" ]
       }
 
+      if (defined(invoker.generate_type_info) && invoker.generate_type_info) {
+        args += [ "--generate-type-info" ]
+      } else {
+        args += [ "--no-generate-type-info" ]
+      }
+
       if (defined(invoker.import_dirs)) {
         foreach(import_dir, invoker.import_dirs) {
           args += [

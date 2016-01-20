@@ -50,7 +50,7 @@ def _ParseCLIArgs():
   parser.add_argument("--no-generate-type-info", dest="generate_type_info",
                       action="store_false",
                       help="do not generate mojom type descriptors")
-  parser.set_defaults(generate_type_info=True)
+  parser.set_defaults(generate_type_info=False)
 
   return parser.parse_known_args()
 
