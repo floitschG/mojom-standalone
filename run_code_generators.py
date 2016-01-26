@@ -28,16 +28,14 @@ def _ParseCLIArgs():
   parser.add_argument('-f', '--file-graph', dest='file_graph',
                       help='Location of the parser output. "-" for stdin. '
                       '(default "-")', default='-')
-  parser.add_argument('-p', '--python-sdk-dir', dest='python_sdk_dir',
-                      default=None,
-                      help='Location of the compiled python bindings')
   parser.add_argument("-o", "--output-dir", dest="output_dir", default=".",
                       help="output directory for generated files")
   parser.add_argument("-g", "--generators", dest="generators_string",
                       metavar="GENERATORS",
                       default="c++,dart,go,javascript,java,python",
                       help="comma-separated list of generators")
-  parser.add_argument("-d", "--depth", dest="depth", default=".",
+  parser.add_argument("-s", "--src-root-path", dest="src_root_path",
+                      default=".",
                       help="relative path to the root of the source tree.")
   parser.add_argument("--no-gen-imports", action="store_true",
                       help="Generate code only for the files that are "
@@ -59,24 +57,12 @@ THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 SDK_ROOT = os.path.abspath(os.path.join(THIS_DIR, os.pardir, os.pardir))
 PYTHON_SDK_DIR = os.path.abspath(os.path.join(SDK_ROOT, "python"))
 
-def _FixPath():
-  # We parse command line args before imports in case the caller wishes to
-  # specify an alternative location for the Mojo Python SDK.
-  # TODO(rudominer) Consider removing this flexibility as I can think of
-  # no good reason for it.
-  args, _ = _ParseCLIArgs()
-  python_sdk_dir = args.python_sdk_dir
-  if not python_sdk_dir:
-    python_sdk_dir = PYTHON_SDK_DIR
-  sys.path.insert(0, python_sdk_dir)
-  # In order to use mojom_files_mojom we need to make sure the dummy mojo_system
-  # can be found on the python path.
-  sys.path.insert(0, os.path.join(python_sdk_dir, "dummy_mojo_system"))
+sys.path.insert(0, PYTHON_SDK_DIR)
+# In order to use mojom_files_mojom we need to make sure the dummy mojo_system
+# can be found on the python path.
+sys.path.insert(0, os.path.join(PYTHON_SDK_DIR, "dummy_mojo_system"))
 
-  sys.path.insert(0, os.path.join(THIS_DIR, "pylib"))
-
-
-_FixPath()
+sys.path.insert(0, os.path.join(THIS_DIR, "pylib"))
 
 
 from mojom.generate.generated import mojom_files_mojom
@@ -88,36 +74,37 @@ def LoadGenerators(generators_string):
   if not generators_string:
     return []  # No generators.
 
-  script_dir = os.path.dirname(os.path.abspath(__file__))
+  generators_dir = os.path.join(THIS_DIR, "generators")
   generators = []
   for generator_name in [s.strip() for s in generators_string.split(",")]:
+    generator_name_lower = generator_name.lower()
     # "Built-in" generators:
-    if generator_name.lower() == "c++":
-      generator_name = os.path.join(script_dir, "generators",
-                                    "mojom_cpp_generator.py")
-    elif generator_name.lower() == "dart":
-      generator_name = os.path.join(script_dir, "generators",
-                                    "mojom_dart_generator.py")
-    elif generator_name.lower() == "go":
-      generator_name = os.path.join(script_dir, "generators",
-                                    "mojom_go_generator.py")
-    elif generator_name.lower() == "javascript":
-      generator_name = os.path.join(script_dir, "generators",
-                                    "mojom_js_generator.py")
-    elif generator_name.lower() == "java":
-      generator_name = os.path.join(script_dir, "generators",
-                                    "mojom_java_generator.py")
-    elif generator_name.lower() == "python":
-      generator_name = os.path.join(script_dir, "generators",
-                                    "mojom_python_generator.py")
+    if generator_name_lower == "c++":
+      generator_py_name = os.path.join(generators_dir,
+        "mojom_cpp_generator.py")
+    elif generator_name_lower == "dart":
+      generator_py_name = os.path.join(generators_dir,
+        "mojom_dart_generator.py")
+    elif generator_name_lower == "go":
+      generator_py_name = os.path.join(generators_dir,
+        "mojom_go_generator.py")
+    elif generator_name_lower == "javascript":
+      generator_py_name = os.path.join(generators_dir,
+        "mojom_js_generator.py")
+    elif generator_name_lower == "java":
+      generator_py_name = os.path.join(generators_dir,
+        "mojom_java_generator.py")
+    elif generator_name_lower == "python":
+      generator_py_name = os.path.join(generators_dir,
+        "mojom_python_generator.py")
     # Specified generator python module:
     elif generator_name.endswith(".py"):
-      pass
+      generator_py_name = generator_name
     else:
       print "Unknown generator name %s" % generator_name
       sys.exit(1)
-    generator_module = imp.load_source(os.path.basename(generator_name)[:-3],
-                                       generator_name)
+    generator_module = imp.load_source(os.path.basename(generator_py_name)[:-3],
+                                       generator_py_name)
     generators.append(generator_module)
   return generators
 
@@ -137,7 +124,7 @@ def ReadMojomFileGraphFromFile(fp):
   return mojom_files_mojom.MojomFileGraph.Deserialize(context)
 
 
-def FixModulePath(module, src_root_path):
+def FixModulePath(module, abs_src_root_path):
   """Fix the path attribute of the provided module and its imports.
 
   The path provided for the various modules is the absolute path to the mojom
@@ -146,13 +133,13 @@ def FixModulePath(module, src_root_path):
 
   Args:
     module: {module.Module} whose path is to be updated.
-    abs_root: {str} absolute path to the root of the source tree.
+    abs_src_root_path: {str} absolute path to the root of the source tree.
   """
-  module.path = os.path.relpath(module.path, src_root_path)
+  module.path = os.path.relpath(module.path, abs_src_root_path)
   if not hasattr(module, 'imports'):
     return
   for import_dict in module.imports:
-    FixModulePath(import_dict['module'], src_root_path)
+    FixModulePath(import_dict['module'], abs_src_root_path)
 
 
 def main():
@@ -164,21 +151,27 @@ def main():
     fp = open(args.file_graph)
 
   mojom_file_graph = ReadMojomFileGraphFromFile(fp)
-  modules = mojom_translator.TranslateFileGraph(mojom_file_graph)
+  mojom_modules = mojom_translator.TranslateFileGraph(mojom_file_graph)
 
+  # Note that we are using the word "module" in two unrelated ways here.
+  # A mojom module is the Python data structure defined in module.py that
+  # represents a Mojom file (sometimes referred to as a Mojom module.)
+  # A generator module is a Python module in the sense of the entity the Python
+  # runtime loads corresponding to a .py file.
   generator_modules = LoadGenerators(args.generators_string)
 
-  for _, module in modules.iteritems():
-    # If filenames are specified on the command line, only generate code for
-    # the specified mojom files.
-    # TODO(azani): This is not as robust as we would like since files with the
-    # same name but different paths or files resolved through links might not
-    # be correctly identified by module.name.
-    if args.no_gen_imports and not module.specified_name:
+  abs_src_root_path = os.path.abspath(args.src_root_path)
+  for _, mojom_module in mojom_modules.iteritems():
+    # If --no-gen-imports is specified then skip the code generation step for
+    # any modules that do not have the |specified_name| field set. This field
+    # being set indicates that the module was translated from a .mojom file
+    # whose name was explicitly requested during parsing. Otherwise the module
+    # is included only becuase of a mojom import statement.
+    if args.no_gen_imports and not mojom_module.specified_name:
       continue
-    FixModulePath(module, os.path.abspath(args.depth))
+    FixModulePath(mojom_module, abs_src_root_path)
     for generator_module in generator_modules:
-      generator = generator_module.Generator(module, args.output_dir)
+      generator = generator_module.Generator(mojom_module, args.output_dir)
 
       # Look at unparsed args for generator-specific args.
       filtered_args = []

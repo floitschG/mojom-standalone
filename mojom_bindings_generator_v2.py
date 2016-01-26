@@ -75,11 +75,8 @@ def RunGenerators(serialized_file_graph, args, remaining_args):
       "--file-graph": "-",
       "--output-dir": args.output_dir,
       "--generators": args.generators_string,
-      "--depth": args.depth,
+      "--src-root-path": args.src_root_path,
       }
-
-  if args.python_sdk_dir:
-    cmd_args["--python-sdk-dir"] = args.python_sdk_dir
 
   for name, value in cmd_args.iteritems():
     cmd.extend([name, value])
@@ -101,9 +98,10 @@ def main(argv):
       description="Generate bindings from mojom files.")
   parser.add_argument("filename", nargs="+",
                       help="mojom input file")
-  parser.add_argument("-d", "--depth", dest="depth", default=".",
+  # TODO(rudominer) Change the name of "depth" to "src-root-path".
+  parser.add_argument("-d", "--depth", dest="src_root_path", default=".",
                       help="Relative path from the current directory to the "
-                      "source root.")
+                      "source root. (The name is misleading.)")
   parser.add_argument("-o", "--output_dir", dest="output_dir", default=".",
                       help="output directory for generated files")
   parser.add_argument("-g", "--generators", dest="generators_string",
@@ -119,9 +117,6 @@ def main(argv):
                       help="Location of the mojom parser.")
   parser.add_argument("--use_bundled_pylibs", action="store_true",
                       help="use Python modules bundled in the SDK")
-  parser.add_argument("-p", "--python-sdk-dir", dest="python_sdk_dir",
-                      help="Location of the compiled python bindings",
-                      default="")
   parser.add_argument("--no-gen-imports", action="store_true",
                       help="Generate code only for the files that are "
                       "specified on the command line. By default, code "
