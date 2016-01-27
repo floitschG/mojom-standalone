@@ -21,7 +21,7 @@ class {{interface.name}} {
 {%- if interface|has_callbacks %}
   using ResponseValidator_ = {{interface.name}}ResponseValidator;
 {%- else %}
-  using ResponseValidator_ = mojo::PassThroughFilter;
+  using ResponseValidator_ = mojo::internal::PassThroughValidator;
 {%- endif %}
 
 {#--- Enums #}

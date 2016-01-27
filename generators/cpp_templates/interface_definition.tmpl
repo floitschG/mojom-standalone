@@ -254,32 +254,21 @@ bool {{class_name}}Stub::AcceptWithResponder(
 
 {#--- Request validator definitions #}
 
-{{class_name}}RequestValidator::{{class_name}}RequestValidator(
-    mojo::MessageReceiver* sink) : MessageFilter(sink) {
-}
-
-{# TODO(vardhan): These validators (used in FilterChains) should return a
-   ValidationError instead of a bool. #}
-bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
-  assert(sink_);
-
-  std::string* err = nullptr;
-#ifndef NDEBUG
-  std::string err2;
-  err = &err2;
-#endif
-
+mojo::internal::ValidationError {{class_name}}RequestValidator::Validate(
+    const mojo::Message* message,
+    std::string* err) {
   mojo::internal::ValidationError retval;
   if (mojo::internal::ControlMessageHandler::IsControlMessage(message)) {
     retval = mojo::internal::ValidateControlRequest(message, err);
     if (retval != mojo::internal::ValidationError::NONE) {
       MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
         << "request validation error for interface '{{interface.name}}', "
-           "message name '" << message->header()->name << "': " << *err;
+           "message name '" << message->header()->name << "': " <<
+           (err ? *err : "");
       ReportValidationError(retval, err);
-      return false;
+      return retval;
     }
-    return sink_->Accept(message);
+    return mojo::internal::ValidationError::NONE;
   }
 
   {{interface.name}}::MessageOrdinals method_ordinal =
@@ -293,20 +282,22 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
                                                                     err);
       if (retval != mojo::internal::ValidationError::NONE) {
         MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
-            << "request validation error for interface '{{interface.name}}', "
-               "message name '" << message->header()->name << "': " << *err;
+          << "request validation error for interface '{{interface.name}}', "
+             "message name '" << message->header()->name << "': " <<
+             (err ? *err : "");
         ReportValidationError(retval, err);
-        return false;
+        return retval;
       }
 {%-   else %}
       retval = mojo::internal::ValidateMessageIsRequestWithoutResponse(message,
                                                                        err);
       if (retval != mojo::internal::ValidationError::NONE) {
         MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
-            << "request validation error for interface '{{interface.name}}', "
-               "message name '" << message->header()->name << "': " << *err;
+          << "request validation error for interface '{{interface.name}}', "
+             "message name '" << message->header()->name << "': " <<
+             (err ? *err : "");
         ReportValidationError(retval, err);
-        return false;
+        return retval;
       }
 {%-   endif %}
       retval = mojo::internal::ValidateMessagePayload<
@@ -315,11 +306,12 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
       if (retval != mojo::internal::ValidationError::NONE) {
          MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
             << "request validation error for interface '{{interface.name}}', "
-               "message name '" << message->header()->name << "': " << *err;
+               "message name '" << message->header()->name << "': " <<
+               (err ? *err : "");
         ReportValidationError(retval, err);
-        return false;
+        return retval;
       }
-      return sink_->Accept(message);
+      return mojo::internal::ValidationError::NONE;
     }
 {%- endfor %}
     default:
@@ -333,44 +325,36 @@ bool {{class_name}}RequestValidator::Accept(mojo::Message* message) {
                                             "'{{interface.name}}'";
   ReportValidationError(
       mojo::internal::ValidationError::MESSAGE_HEADER_UNKNOWN_METHOD, err);
-  return false;
+  return mojo::internal::ValidationError::MESSAGE_HEADER_UNKNOWN_METHOD;
 }
 
 {#--- Response validator definitions #}
 {% if interface|has_callbacks %}
-{{class_name}}ResponseValidator::{{class_name}}ResponseValidator(
-    mojo::MessageReceiver* sink) : MessageFilter(sink) {
-}
-
-bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
-  assert(sink_);
-
-  std::string* err = nullptr;
-#ifndef NDEBUG
-  std::string err2;
-  err = &err2;
-#endif
-
+mojo::internal::ValidationError {{class_name}}ResponseValidator::Validate(
+    const mojo::Message* message,
+    std::string* err) {
   mojo::internal::ValidationError retval;
   if (mojo::internal::ControlMessageHandler::IsControlMessage(message)) {
     retval = mojo::internal::ValidateControlResponse(message, err);
     if (retval != mojo::internal::ValidationError::NONE) {
-       MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
-            << "response validation error for interface '{{interface.name}}', "
-               "message name '" << message->header()->name << "': " << *err;
+      MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
+        << "response validation error for interface '{{interface.name}}',"
+           " message name '" << message->header()->name << "': " <<
+           (err ? *err : "");
       ReportValidationError(retval, err);
-      return false;
+      return retval;
     }
-    return sink_->Accept(message);
+    return mojo::internal::ValidationError::NONE;
   }
 
   retval = mojo::internal::ValidateMessageIsResponse(message, err);
   if (retval != mojo::internal::ValidationError::NONE) {
     MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
-            << "response validation error for interface '{{interface.name}}', "
-               "message name '" << message->header()->name << "': " << *err;
+            << "response validation error for interface '{{interface.name}}',"
+               " message name '" << message->header()->name << "': " <<
+               (err ? *err : "");
     ReportValidationError(retval, err);
-    return false;
+    return retval;
   }
 
   {{class_name}}::MessageOrdinals method_ordinal =
@@ -383,12 +367,13 @@ bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
                       message, err);
       if (retval != mojo::internal::ValidationError::NONE) {
         MOJO_INTERNAL_DEBUG_SET_ERROR_MSG(err)
-            << "response validation error for interface '{{interface.name}}', "
-               "message name '" << message->header()->name << "': " << *err;
+            << "response validation error for interface '{{interface.name}}',"
+               " message name '" << message->header()->name << "': " <<
+               (err ? *err : "");
         ReportValidationError(retval, err);
-        return false;
+        return retval;
       }
-      return sink_->Accept(message);
+      return mojo::internal::ValidationError::NONE;
     }
 {%- endfor %}
     default:
@@ -402,6 +387,6 @@ bool {{class_name}}ResponseValidator::Accept(mojo::Message* message) {
                                              "'{{interface.name}}'";
   ReportValidationError(
       mojo::internal::ValidationError::MESSAGE_HEADER_UNKNOWN_METHOD, err);
-  return false;
+  return mojo::internal::ValidationError::MESSAGE_HEADER_UNKNOWN_METHOD;
 }
 {%- endif -%}

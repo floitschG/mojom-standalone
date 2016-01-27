@@ -1,6 +1,6 @@
-class {{interface.name}}RequestValidator : public mojo::MessageFilter {
+class {{interface.name}}RequestValidator
+    : public mojo::internal::MessageValidator {
  public:
-  explicit {{interface.name}}RequestValidator(mojo::MessageReceiver* sink = nullptr);
-
-  bool Accept(mojo::Message* message) override;
+  mojo::internal::ValidationError Validate(const mojo::Message* message,
+                                           std::string* err) override;
 };
