@@ -1,10 +1,11 @@
 {#--- Begin #}
 {%- import "encoding_macros.tmpl" as encoding_macros %}
-{%- macro struct_def(struct) %}
+{%- import "mojom_type_macros.tmpl" as mojom_type_macros %}
+{%- macro struct_def(struct, typepkg, package) %}
 {#--- Enums #}
 {%- from "enum_definition.tmpl" import enum_def %}
 {%-  for enum in struct.enums %}
-{{enum_def(enum)}}
+{{enum_def(enum, typepkg, package)}}
 {%-  endfor %}
 
 class {{struct|name}} extends bindings.Struct {
@@ -103,4 +104,8 @@ class {{struct|name}} extends bindings.Struct {
     {%- endif %}
   }
 }
+
+{% if should_gen_mojom_types -%}
+{{ mojom_type_macros.writeMojomTypeDef(struct, typepkg, package) }}
+{%- endif -%}
 {%- endmacro %}

@@ -123,6 +123,30 @@ _kind_to_dart_decl_type = {
   mojom.NULLABLE_STRING:       "String"
 }
 
+_kind_to_mojom_type = {
+  mojom.BOOL:                  "bool",
+  mojom.INT8:                  "int8",
+  mojom.UINT8:                 "uint8",
+  mojom.INT16:                 "int16",
+  mojom.UINT16:                "uint16",
+  mojom.INT32:                 "int32",
+  mojom.UINT32:                "uint32",
+  mojom.FLOAT:                 "float",
+  mojom.HANDLE:                "unspecified",
+  mojom.DCPIPE:                "dataPipeConsumer",
+  mojom.DPPIPE:                "dataPipeProducer",
+  mojom.MSGPIPE:               "messagePipe",
+  mojom.SHAREDBUFFER:          "sharedBuffer",
+  mojom.NULLABLE_HANDLE:       "unspecified",
+  mojom.NULLABLE_DCPIPE:       "dataPipeConsumer",
+  mojom.NULLABLE_DPPIPE:       "dataPipeProducer",
+  mojom.NULLABLE_MSGPIPE:      "messagePipe",
+  mojom.NULLABLE_SHAREDBUFFER: "sharedBuffer",
+  mojom.INT64:                 "int64",
+  mojom.UINT64:                "uint64",
+  mojom.DOUBLE:                "double"
+}
+
 _spec_to_decode_method = {
   mojom.BOOL.spec:                  'decodeBool',
   mojom.DCPIPE.spec:                'decodeConsumerHandle',
@@ -175,6 +199,16 @@ _spec_to_encode_method = {
   mojom.UINT8.spec:                 'encodeUint8',
 }
 
+# The mojom_types.mojom and service_describer.mojom files are special because
+# they are used to generate mojom Type's and ServiceDescription implementations.
+# They need to be imported, unless the file itself is being generated.
+_service_describer_pkg_short = "service_describer"
+_service_describer_pkg = "package:mojo/mojo/bindings/types/%s.mojom.dart" % \
+  _service_describer_pkg_short
+_mojom_types_pkg_short = "mojom_types"
+_mojom_types_pkg = "package:mojo/mojo/bindings/types/%s.mojom.dart" % \
+  _mojom_types_pkg_short
+
 def GetDartType(kind):
   if kind.imported_from:
     return kind.imported_from["unique_name"] + "." + GetNameForElement(kind)
@@ -224,6 +258,9 @@ def DartDeclType(kind):
     return "Object"
   if mojom.IsEnumKind(kind):
     return GetDartType(kind)
+
+def GetSimpleMojomTypeName(kind):
+  return _kind_to_mojom_type[kind]
 
 def NameToComponent(name):
   # insert '_' between anything and a Title name (e.g, HTTPEntry2FooBar ->
@@ -426,6 +463,9 @@ def IsPointerArrayKind(kind):
 def IsEnumArrayKind(kind):
   return mojom.IsArrayKind(kind) and mojom.IsEnumKind(kind.kind)
 
+def IsImportedKind(kind):
+  return hasattr(kind, 'imported_from') and kind.imported_from
+
 def ParseStringAttribute(attribute):
   assert isinstance(attribute, basestring)
   return attribute
@@ -442,6 +482,9 @@ def GetImportUri(module):
   elements.append("%s" % module.name)
   return os.path.join(package, *elements)
 
+def RaiseHelper(msg):
+    raise Exception(msg)
+
 class Generator(generator.Generator):
 
   dart_filters = {
@@ -450,23 +493,42 @@ class Generator(generator.Generator):
     'decode_method': DecodeMethod,
     'default_value': DartDefaultValue,
     'encode_method': EncodeMethod,
+    'fullidentifier': mojom.GetMojomTypeFullIdentifier,
+    'simple_mojom_type_name': GetSimpleMojomTypeName,
+    'mojom_type_name': mojom.GetMojomTypeName,
+    'mojom_type_identifier': mojom.GetMojomTypeIdentifier,
+    'is_imported_kind': IsImportedKind,
+    'is_array_kind': mojom.IsArrayKind,
     'is_map_kind': mojom.IsMapKind,
+    'is_numerical_kind': mojom.IsNumericalKind,
+    'is_any_handle_kind': mojom.IsAnyHandleKind,
+    'is_string_kind': mojom.IsStringKind,
     'is_nullable_kind': mojom.IsNullableKind,
     'is_pointer_array_kind': IsPointerArrayKind,
     'is_enum_array_kind': IsEnumArrayKind,
     'is_struct_kind': mojom.IsStructKind,
     'is_union_kind': mojom.IsUnionKind,
     'is_enum_kind': mojom.IsEnumKind,
+    'is_interface_kind': mojom.IsInterfaceKind,
+    'is_interface_request_kind': mojom.IsInterfaceRequestKind,
     'dart_true_false': GetDartTrueFalse,
     'dart_type': DartDeclType,
     'name': GetNameForElement,
     'interface_response_name': GetInterfaceResponseName,
     'dot_to_underscore': DotToUnderscore,
     'is_cloneable_kind': mojom.IsCloneableKind,
+    'upper_camel': UpperCamelCase,
+    'lower_camel': CamelCase,
+    'raise': RaiseHelper,
   }
 
+  # If set to True, then mojom type information will be generated.
+  should_gen_mojom_types = False
+
   def GetParameters(self, args):
-    return {
+    package = self.module.name.split('.')[0]
+
+    parameters = {
       "namespace": self.module.namespace,
       "imports": self.GetImports(args),
       "kinds": self.module.kinds,
@@ -477,6 +539,33 @@ class Generator(generator.Generator):
       "interfaces": self.GetInterfaces(),
       "imported_interfaces": self.GetImportedInterfaces(),
       "imported_from": self.ImportedFrom(),
+      "typepkg": '%s.' % _mojom_types_pkg_short,
+      "descpkg": '%s.' % _service_describer_pkg_short,
+      "mojom_types_import": 'import \'%s\' as %s;' % \
+        (_mojom_types_pkg, _mojom_types_pkg_short),
+      "service_describer_import": 'import \'%s\' as %s;' % \
+        (_service_describer_pkg, _service_describer_pkg_short),
+    }
+
+    # If this is the mojom types package, clear the import-related params.
+    if package == _mojom_types_pkg_short:
+      parameters["typepkg"] = ""
+      parameters["mojom_types_import"] = ""
+
+    # If this is the service describer package, clear the import-related params.
+    if package == _service_describer_pkg_short:
+      parameters["descpkg"] = ""
+      parameters["service_describer_import"] = ""
+
+    # If no interfaces were defined, the service describer import isn't needed.
+    if len(self.module.interfaces) == 0:
+      parameters["service_describer_import"] = ""
+
+    return parameters
+
+  def GetGlobals(self):
+    return {
+      'should_gen_mojom_types': self.should_gen_mojom_types,
     }
 
   @UseJinja("dart_templates/module.lib.tmpl", filters=dart_filters)
@@ -485,6 +574,8 @@ class Generator(generator.Generator):
 
 
   def GenerateFiles(self, args):
+    self.should_gen_mojom_types = "--generate_type_info" in args
+
     elements = self.module.namespace.split('.')
     elements.append("%s.dart" % self.module.name)
 

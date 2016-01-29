@@ -139,11 +139,6 @@ def GetFullName(element, exported=True):
   return GetQualifiedName(
     element.name, GetPackageNameForElement(element), exported)
 
-# Returns a string of the form package.path.TypeName - the full identifier
-# for an element.
-def GetFullIdentifier(element, exported=True):
-  return '%s.%s' % (element.module.namespace, GetNameForElement(element))
-
 def GetUnqualifiedNameForElement(element, exported=True):
   return FormatName(element.name, exported)
 
@@ -307,26 +302,6 @@ def AddImport(imports, mojom_imports, module, element):
   imports[path] = name
   mojom_imports[path] = name
 
-def GetIdentifier(kind):
-  """Use the kind's module to determine the package and name."""
-  # Note: InterfaceRequest's should use the Interface inside them.
-  if hasattr(kind, 'module'):
-    package = GetPackageName(kind.module)
-    name = kind.name
-  elif mojom.IsInterfaceRequestKind(kind):
-    package = GetPackageName(kind.kind.module)
-    name = kind.kind.name
-  else:
-    # These kinds (e.g., simple kinds, maps, and arrays) lack identifiers.
-    raise Exception('Unexpected kind: %s' % kind)
-
-  return '%s_%s' % (package, name)
-
-# Get the mojom type's identifier suffix.
-def GetMojomTypeIdentifier(kind):
-  # Since this should be unique, it is based on the type's identifier.
-  return "%s__" % GetIdentifier(kind)
-
 class Generator(generator.Generator):
   go_filters = {
     'array': lambda kind: mojom.Array(kind),
@@ -336,7 +311,6 @@ class Generator(generator.Generator):
     'go_type': GetGoType,
     'expression_to_text': ExpressionToText,
     'has_response': lambda method: method.response_parameters is not None,
-    'identifier': GetIdentifier,
     'is_array': mojom.IsArrayKind,
     'is_enum': mojom.IsEnumKind,
     'is_handle': mojom.IsAnyHandleKind,
@@ -350,9 +324,9 @@ class Generator(generator.Generator):
     'is_struct': mojom.IsStructKind,
     'is_union': mojom.IsUnionKind,
     'qualified': GetQualifiedName,
-    'fullidentifier': GetFullIdentifier,
+    'fullidentifier': mojom.GetMojomTypeFullIdentifier,
     'mojom_type': GetMojomTypeValue,
-    'mojom_type_identifier': GetMojomTypeIdentifier,
+    'mojom_type_identifier': mojom.GetMojomTypeIdentifier,
     'name': GetNameForElement,
     'unqualified_name': GetUnqualifiedNameForElement,
     'package': GetPackageNameForElement,

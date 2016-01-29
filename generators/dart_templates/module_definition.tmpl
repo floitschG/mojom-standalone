@@ -6,22 +6,59 @@ const {{constant.kind|dart_type}} {{constant|name}} = {{constant.resolved_value}
 {#--- Enums #}
 {%- from "enum_definition.tmpl" import enum_def %}
 {%- for enum in enums %}
-{{ enum_def(enum) }}
+{{ enum_def(enum, typepkg, package) }}
 {%-  endfor %}
 
 {#--- Struct definitions #}
 {%- from "struct_definition.tmpl" import struct_def %}
 {%  for struct in structs %}
-{{ struct_def(struct) }}
+{{ struct_def(struct, typepkg, package) }}
 {%- endfor -%}
 
 {#--- Union definitions #}
 {%- from "union_definition.tmpl" import union_def %}
 {%  for union in unions %}
-{{ union_def(union) }}
+{{ union_def(union, typepkg, package) }}
 {%- endfor -%}
 
 {#--- Interface definitions #}
+{% import "mojom_type_macros.tmpl" as mojom_type_macros %}
 {%- for interface in interfaces -%}
 {%-   include "interface_definition.tmpl" %}
 {%- endfor %}
+{% if should_gen_mojom_types -%}
+{%- import "mojom_reference_macros.tmpl" as mojom_reference_macros %}
+{%- set mapping = '_mojomDesc' %}
+{%- set temp_mapping = 'map' %}
+Map<String, {{typepkg}}UserDefinedType> _initDescriptions() {
+  var {{temp_mapping}} = new HashMap<String, {{typepkg}}UserDefinedType>();
+{%- for enum in enums %}
+  {{mojom_reference_macros.registerType(temp_mapping, typepkg, package, enum)}}
+{%- endfor -%}
+{%- for struct in structs %}
+  {{mojom_reference_macros.registerType(temp_mapping, typepkg, package, struct)}}
+{%- endfor -%}
+{%- for union in unions %}
+  {{mojom_reference_macros.registerType(temp_mapping, typepkg, package, union)}}
+{%- endfor -%}
+{%- for interface in interfaces %}
+  {{mojom_reference_macros.registerType(temp_mapping, typepkg, package, interface)}}
+{%- endfor -%}
+
+{%- for import in imports %}
+  {{import.unique_name}}.getAllMojomTypeDefinitions()
+      .forEach((String s, {{typepkg}}UserDefinedType udt) {
+    {{temp_mapping}}[s] = udt;
+  });
+{% endfor %}
+  return {{temp_mapping}};
+}
+
+var {{mapping}};
+Map<String, {{typepkg}}UserDefinedType> getAllMojomTypeDefinitions() {
+  if ({{mapping}} == null) {
+    {{mapping}} = _initDescriptions();
+  }
+  return {{mapping}};
+}
+{%- endif %}

@@ -1,7 +1,7 @@
 {#--- Begin #}
 
 {%- import "encoding_macros.tmpl" as encoding_macros %}
-
+{%- import "mojom_type_macros.tmpl" as mojom_type_macros %}
 {%- macro enum_def(union) %}
 enum {{union|name}}Tag {
 {%-   for field in union.fields %}
@@ -108,7 +108,11 @@ class {{union|name}} extends bindings.Union {
 {%- endmacro %}
 
 
-{%- macro union_def(union) %}
+{%- macro union_def(union, typepkg, package) %}
 {{enum_def(union)}}
 {{wrapper_def(union)}}
+
+{% if should_gen_mojom_types -%}
+{{ mojom_type_macros.writeMojomTypeDef(union, typepkg, package) }}
+{%- endif -%}
 {%- endmacro %}

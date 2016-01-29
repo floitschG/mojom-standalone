@@ -1,4 +1,6 @@
-{%- macro enum_def(enum) %}
+{% import "mojom_type_macros.tmpl" as mojom_type_macros %}
+
+{%- macro enum_def(enum, typepkg, package) %}
 class {{enum|name}} extends bindings.MojoEnum {
 {%- for field in enum.fields %}
   static const {{enum|name}} {{field|name}} = const {{enum|name}}._({{field.resolved_value}});
@@ -46,9 +48,15 @@ class {{enum|name}} extends bindings.MojoEnum {
       case {{field|name}}:
         return '{{enum|name}}.{{field|name}}';
 {%- endfor %}
+      default:
+        return null;
     }
   }
 
   int toJson() => mojoEnumValue;
 }
+
+{% if should_gen_mojom_types -%}
+{{ mojom_type_macros.writeMojomTypeDef(enum, typepkg, package) }}
+{%- endif -%}
 {%- endmacro %}

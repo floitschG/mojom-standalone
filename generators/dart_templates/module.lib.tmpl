@@ -5,9 +5,14 @@
 library {{module.name|dot_to_underscore}};
 
 import 'dart:async';
+{%- if should_gen_mojom_types %}
+import 'dart:collection';
+{%- endif %}
 
 import 'package:mojo/bindings.dart' as bindings;
 import 'package:mojo/core.dart' as core;
+{{mojom_types_import}}
+{{service_describer_import}}
 
 {%- for import in imports %}
 import 'package:{{import.rebased_path}}.dart' as {{import.unique_name}};
