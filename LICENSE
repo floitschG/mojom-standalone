@@ -2,8 +2,11 @@ This license applies to all parts of the standalone mojom-compiler
 that are not externally maintained libraries. The external maintained
 libraries used by the standalone mojom-compiler are:
 
+Mojo-maintained sources:
 Mojom bindings - in lib/tools/bindings/
 Mojo Python libs - in lib/python/
+
+Other third-party libraries in lib/third_party/
 
 The libraries may have their own licenses; we recommend you read them,
 as their terms may differ from the terms below.
