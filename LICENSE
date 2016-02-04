@@ -3,10 +3,10 @@ that are not externally maintained libraries. The external maintained
 libraries used by the standalone mojom-compiler are:
 
 Mojo-maintained sources:
-Mojom bindings - in lib/tools/bindings/
-Mojo Python libs - in lib/python/
+Mojom bindings - in lib/public/tools/bindings/
+Mojo Python libs - in lib/public/python/
 
-Other third-party libraries in lib/third_party/
+Other third-party libraries in lib/public/third_party/
 
 The libraries may have their own licenses; we recommend you read them,
 as their terms may differ from the terms below.
