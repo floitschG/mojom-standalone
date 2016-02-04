@@ -8,8 +8,8 @@ git pull
 git subtree split --prefix mojo/public/tools/bindings -b upstream-bindings
 git subtree split --prefix mojo/public/python -b upstream-python
 git checkout $current_branch
-git subtree merge --prefix lib/tools/bindings upstream-bindings
-git subtree merge --prefix lib/python upstream-python
+git subtree merge -m "merge upstream" --prefix lib/tools/bindings upstream-bindings
+git subtree merge -m "merge upstream" --prefix lib/python upstream-python
 
 # The following downloads require depot_tools.
 download_from_google_storage.py \
