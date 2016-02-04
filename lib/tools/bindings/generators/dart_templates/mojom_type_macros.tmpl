@@ -1,0 +1,182 @@
+// Copyright 2015 The Chromium Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+{%- macro writeMojomTypeDef(type, typepkg, pkg) -%}
+{%- if type|is_enum_kind -%}
+{{typepkg}}MojomEnum _{{type|mojom_type_identifier|lower_camel}}() {
+  return {{ writeMojomType(type, typepkg, pkg) }};
+}
+{%- elif type|is_struct_kind -%}
+{{typepkg}}MojomStruct _{{type|mojom_type_identifier|lower_camel}}() {
+  return {{ writeMojomType(type, typepkg, pkg) }};
+}
+{%- elif type|is_union_kind -%}
+{{typepkg}}MojomUnion _{{type|mojom_type_identifier|lower_camel}}() {
+  return {{ writeMojomType(type, typepkg, pkg) }};
+}
+{%- elif type|is_interface_kind -%}
+{{typepkg}}MojomInterface _{{type|mojom_type_identifier|lower_camel}}() {
+  return new {{typepkg}}MojomInterface()
+    ..declData = (new {{typepkg}}DeclarationData()
+      ..shortName = '{{type|mojom_type_name|upper_camel}}'
+      ..fullIdentifier = '{{type|fullidentifier}}')
+    ..interfaceName = '{{type|name}}'
+    ..methods = <int, {{typepkg}}MojomMethod>{
+{%- for method in type.methods %}
+      _{{type|name}}_{{method|name}}Name: new {{typepkg}}MojomMethod()
+        ..declData = (new {{typepkg}}DeclarationData()
+          ..shortName = '{{method|mojom_type_name|upper_camel}}')
+        ..ordinal = _{{type|name}}_{{method|name}}Name
+{%- if method.response_parameters != None %}
+        ..responseParams = _{{method.response_param_struct|mojom_type_identifier|lower_camel}}()
+{%- endif %}
+        ..parameters = _{{method.param_struct|mojom_type_identifier|lower_camel}}(),
+{%- endfor %}
+    };
+}
+{%- else -%}
+  {{ raise("Bad type name given: {{type|name}}") }}
+{%- endif -%}
+{%- endmacro -%}
+
+
+{%- macro writeMojomType(type, typepkg, pkg, topLevel=true) -%}
+{%- if type|is_numerical_kind -%}{#- bool, int, and uint case -#}
+  new {{typepkg}}Type()
+    ..simpleType = {{typepkg}}SimpleType.{{type|simple_mojom_type_name}}
+{%- elif type|is_any_handle_kind and not type|is_interface_request_kind -%}
+  new {{typepkg}}Type()
+    ..handleType = (new {{typepkg}}HandleType()
+      ..kind = {{typepkg}}HandleTypeKind.{{type|simple_mojom_type_name}}
+    {%- if type|is_nullable_kind %}
+      ..nullable = true
+    {% endif %})
+{%- elif type|is_string_kind -%}
+  new {{typepkg}}Type()
+    ..stringType = (new {{typepkg}}StringType()
+    {%- if type|is_nullable_kind %}
+      ..nullable = true
+    {% endif %})
+{%- elif type|is_array_kind -%}
+  {{writeTypeArrayType(type, typepkg, pkg)}}
+{%- elif type|is_map_kind -%}
+  {{writeTypeMapType(type, typepkg, pkg)}}
+{%- elif type|is_enum_kind or type|is_struct_kind or type|is_union_kind -%}
+  {%- if topLevel -%}
+    {%- if type|is_enum_kind -%}
+      {{writeMojomEnumType(type, typepkg, pkg)}}
+    {%- elif type|is_struct_kind -%}
+      {{writeMojomStructType(type, typepkg, pkg)}}
+    {%- else -%} {#- Must be a union -#}
+      {{writeMojomUnionType(type, typepkg, pkg)}}
+    {%- endif -%}
+  {%- else -%}
+  {{writeTypeTypeReference(type, typepkg, pkg)}}
+  {%- endif -%}
+{%- elif type|is_interface_kind or type|is_interface_request_kind -%}
+  {{writeTypeTypeReference(type, typepkg, pkg)}}
+{%- else -%}
+  {{ raise("Unsupported type: {{type|name}}") }}
+{%- endif -%}
+{%- endmacro -%}
+
+{%- macro writeTypeArrayType(type, typepkg, pkg) -%}
+  new {{typepkg}}Type()
+    ..arrayType = (new {{typepkg}}ArrayType()
+    {%- if type|is_nullable_kind %}
+      ..nullable = true
+    {%- endif %}
+    {%- if type.length is not none %}
+      ..fixedLength = {{type.length}}
+    {%- endif %}
+      ..elementType = ({{writeMojomType(type.kind, typepkg, pkg, false)|indent(10)}}))
+{%- endmacro -%}
+
+{%- macro writeTypeMapType(type, typepkg, pkg) -%}
+  new {{typepkg}}Type()
+    ..mapType = (new {{typepkg}}MapType()
+    {%- if type|is_nullable_kind %}
+      ..nullable = true
+    {% endif %}
+      ..keyType = ({{writeMojomType(type.key_kind, typepkg, pkg, false)|indent(10)}})
+      ..valueType = ({{writeMojomType(type.value_kind, typepkg, pkg, false)|indent(10)}}))
+{%- endmacro -%}
+
+{%- macro writeMojomEnumType(type, typepkg, pkg) -%}
+  new {{typepkg}}MojomEnum()
+    ..declData = (new {{typepkg}}DeclarationData()
+      ..shortName = '{{type|mojom_type_name|upper_camel}}'
+      ..fullIdentifier = '{{type|fullidentifier}}')
+    ..values = <{{typepkg}}EnumValue>[
+      {%- for field in type.fields %}
+      new {{typepkg}}EnumValue()
+        ..declData = (new {{typepkg}}DeclarationData()
+          ..shortName = '{{field|mojom_type_name|upper_camel}}')
+        ..enumTypeKey = {{writePackagedTypeID(type)}}
+        ..intValue = {{field.numeric_value}},
+      {%- endfor -%}
+    ]
+{%- endmacro -%}
+
+
+{%- macro writeTypeTypeReference(type, typepkg, pkg) -%}
+  new {{typepkg}}Type()
+    ..typeReference = ({{writeTypeReference(type, typepkg, pkg)}})
+{%- endmacro -%}
+
+{%- macro writeTypeReference(type, typepkg, pkg) -%}
+  new {{typepkg}}TypeReference()
+  {%- if type|is_nullable_kind %}
+    ..nullable = true
+  {% endif %}
+  {%- if type|is_interface_request_kind %}{# Interface request collapses to interface. #}
+    ..isInterfaceRequest = true
+    ..identifier = {{writePackagedTypeID(type.kind)}}
+    ..typeKey = {{writePackagedTypeID(type.kind)}}
+  {% else %}
+    ..identifier = {{writePackagedTypeID(type)}}
+    ..typeKey = {{writePackagedTypeID(type)}}
+  {% endif -%}
+{%- endmacro -%}
+
+{%- macro writePackagedTypeID(type) -%}
+  '{{type|mojom_type_identifier}}'
+{%- endmacro -%}
+
+{%- macro writeMojomStructType(type, typepkg, pkg) -%}
+  new {{typepkg}}MojomStruct()
+    ..declData = (new {{typepkg}}DeclarationData()
+      ..shortName = '{{type|mojom_type_name|upper_camel}}'
+      ..fullIdentifier = '{{type|fullidentifier}}')
+    {%- if type|is_nullable_kind %}
+    ..nullable = true
+    {% endif %}
+    ..fields = <{{typepkg}}StructField>[
+      {%- for field in type.fields %}
+      new {{typepkg}}StructField()
+        ..declData = (new {{typepkg}}DeclarationData()
+          ..shortName = '{{field|mojom_type_name|upper_camel}}')
+        ..type = ({{writeMojomType(field.kind, typepkg, pkg, false)|indent(6)}}),
+      {%- endfor -%}
+    ]
+{%- endmacro -%}
+
+{%- macro writeMojomUnionType(type, typepkg, pkg) -%}
+  new {{typepkg}}MojomUnion()
+    ..declData = (new {{typepkg}}DeclarationData()
+      ..shortName = '{{type|mojom_type_name|upper_camel}}'
+      ..fullIdentifier = '{{type|fullidentifier}}')
+    {%- if type|is_nullable_kind %}
+    ..nullable = true
+    {% endif %}
+    ..fields = <{{typepkg}}UnionField>[
+      {%- for field in type.fields %}
+      new {{typepkg}}UnionField()
+        ..declData = (new {{typepkg}}DeclarationData()
+          ..shortName = '{{field|name|upper_camel}}')
+        ..type = ({{writeMojomType(field.kind, typepkg, pkg, false)|indent(6)}})
+        ..tag = {{field.ordinal}},
+      {%- endfor -%}
+    ]
+{%- endmacro -%}

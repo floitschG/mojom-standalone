@@ -1,0 +1,330 @@
+{%- for method in interface.methods %}
+const int _{{interface|name}}_{{method|name}}Name = {{method.ordinal}};
+{%- endfor %}
+
+{#--- Interface Enums #}
+{%- from "enum_definition.tmpl" import enum_def -%}
+{%- for enum in interface.enums %}
+  {{ enum_def(enum, typepkg, package) }}
+{%-  endfor %}
+
+{% if should_gen_mojom_types -%}
+{{ mojom_type_macros.writeMojomTypeDef(interface, typepkg, package) }}
+{%- endif %}
+
+class _{{interface|name}}ServiceDescription implements {{descpkg}}ServiceDescription {
+{%- if should_gen_mojom_types %}
+  dynamic getTopLevelInterface([Function responseFactory]) =>
+      _{{interface|mojom_type_identifier|lower_camel}}();
+
+  dynamic getTypeDefinition(String typeKey, [Function responseFactory]) =>
+      getAllMojomTypeDefinitions()[typeKey];
+
+  dynamic getAllTypeDefinitions([Function responseFactory]) =>
+      getAllMojomTypeDefinitions();
+{%- else %}
+  dynamic getTopLevelInterface([Function responseFactory]) => null;
+
+  dynamic getTypeDefinition(String typeKey, [Function responseFactory]) => null;
+
+  dynamic getAllTypeDefinitions([Function responseFactory]) => null;
+{%- endif %}
+}
+
+abstract class {{interface|name}} {
+{%- if interface.service_name %}
+  static const String serviceName = "{{interface.service_name}}";
+{%- else %}
+  static const String serviceName = null;
+{%- endif %}
+
+{%- for method in interface.methods %}
+{%- if method.response_parameters == None %}
+  void {{method|name}}(
+    {%- for parameter in method.parameters -%}
+      {{parameter.kind|dart_type}} {{parameter|name}}{% if not loop.last %}, {% endif %}
+    {%- endfor -%}
+    );
+{%- else %}
+  dynamic {{method|name}}(
+  {%- for parameter in method.parameters -%}
+    {{parameter.kind|dart_type}} {{parameter|name}},
+  {%- endfor -%}
+    [Function responseFactory = null]);
+{%- endif %}
+{%- endfor %}
+
+{#--- Interface Constants #}
+{%- for constant in interface.constants %}
+  static const {{constant.kind|dart_type}} {{constant|name}} = {{constant.resolved_value}};
+{%-   endfor %}
+}
+
+
+class _{{interface|name}}ProxyImpl extends bindings.Proxy {
+  _{{interface|name}}ProxyImpl.fromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint) : super.fromEndpoint(endpoint);
+
+  _{{interface|name}}ProxyImpl.fromHandle(core.MojoHandle handle) :
+      super.fromHandle(handle);
+
+  _{{interface|name}}ProxyImpl.unbound() : super.unbound();
+
+  static _{{interface|name}}ProxyImpl newFromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint) {
+    assert(endpoint.setDescription("For _{{interface|name}}ProxyImpl"));
+    return new _{{interface|name}}ProxyImpl.fromEndpoint(endpoint);
+  }
+
+  {{descpkg}}ServiceDescription get serviceDescription =>
+    new _{{interface|name}}ServiceDescription();
+
+  void handleResponse(bindings.ServiceMessage message) {
+    switch (message.header.type) {
+{%- for method in interface.methods %}
+{%- if method.response_parameters != None %}
+{%- set response_struct = method.response_param_struct %}
+      case _{{interface|name}}_{{method|name}}Name:
+        var r = {{response_struct|name}}.deserialize(
+            message.payload);
+        if (!message.header.hasRequestId) {
+          proxyError("Expected a message with a valid request Id.");
+          return;
+        }
+        Completer c = completerMap[message.header.requestId];
+        if (c == null) {
+          proxyError(
+              "Message had unknown request Id: ${message.header.requestId}");
+          return;
+        }
+        completerMap.remove(message.header.requestId);
+        if (c.isCompleted) {
+          proxyError("Response completer already completed");
+          return;
+        }
+        c.complete(r);
+        break;
+{%- endif %}
+{%- endfor %}
+      default:
+        proxyError("Unexpected message type: ${message.header.type}");
+        close(immediate: true);
+        break;
+    }
+  }
+
+  String toString() {
+    var superString = super.toString();
+    return "_{{interface|name}}ProxyImpl($superString)";
+  }
+}
+
+
+class _{{interface|name}}ProxyCalls implements {{interface|name}} {
+  _{{interface|name}}ProxyImpl _proxyImpl;
+
+  _{{interface|name}}ProxyCalls(this._proxyImpl);
+
+  {%- for method in interface.methods %}
+  {%- if method.response_parameters == None %}
+    void {{method|name}}(
+  {%- for parameter in method.parameters -%}
+      {{parameter.kind|dart_type}} {{parameter|name}}{% if not loop.last %}, {% endif %}
+  {%- endfor -%}
+  {%- set request_struct = method.param_struct -%}
+    ) {
+      if (!_proxyImpl.isBound) {
+        _proxyImpl.proxyError("The Proxy is closed.");
+        return;
+      }
+      var params = new {{request_struct|name}}();
+  {%- for parameter in method.parameters %}
+      params.{{parameter|name}} = {{parameter|name}};
+  {%- endfor %}
+      _proxyImpl.sendMessage(params, _{{interface|name}}_{{method|name}}Name);
+    }
+  {%- else %}
+  {%- set request_struct = method.param_struct %}
+    dynamic {{method|name}}(
+  {%- for parameter in method.parameters -%}
+      {{parameter.kind|dart_type}} {{parameter|name}},
+  {%- endfor -%}
+      [Function responseFactory = null]) {
+      var params = new {{request_struct|name}}();
+  {%- for parameter in method.parameters %}
+      params.{{parameter|name}} = {{parameter|name}};
+  {%- endfor %}
+      return _proxyImpl.sendMessageWithRequestId(
+          params,
+          _{{interface|name}}_{{method|name}}Name,
+          -1,
+          bindings.MessageHeader.kMessageExpectsResponse);
+    }
+  {%- endif %}
+  {%- endfor %}
+}
+
+
+class {{interface|name}}Proxy implements bindings.ProxyBase {
+  final bindings.Proxy impl;
+  {{interface|name}} ptr;
+
+  {{interface|name}}Proxy(_{{interface|name}}ProxyImpl proxyImpl) :
+      impl = proxyImpl,
+      ptr = new _{{interface|name}}ProxyCalls(proxyImpl);
+
+  {{interface|name}}Proxy.fromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint) :
+      impl = new _{{interface|name}}ProxyImpl.fromEndpoint(endpoint) {
+    ptr = new _{{interface|name}}ProxyCalls(impl);
+  }
+
+  {{interface|name}}Proxy.fromHandle(core.MojoHandle handle) :
+      impl = new _{{interface|name}}ProxyImpl.fromHandle(handle) {
+    ptr = new _{{interface|name}}ProxyCalls(impl);
+  }
+
+  {{interface|name}}Proxy.unbound() :
+      impl = new _{{interface|name}}ProxyImpl.unbound() {
+    ptr = new _{{interface|name}}ProxyCalls(impl);
+  }
+
+  factory {{interface|name}}Proxy.connectToService(
+      bindings.ServiceConnector s, String url, [String serviceName]) {
+    {{interface|name}}Proxy p = new {{interface|name}}Proxy.unbound();
+    s.connectToService(url, p, serviceName);
+    return p;
+  }
+
+  static {{interface|name}}Proxy newFromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint) {
+    assert(endpoint.setDescription("For {{interface|name}}Proxy"));
+    return new {{interface|name}}Proxy.fromEndpoint(endpoint);
+  }
+
+  String get serviceName => {{interface|name}}.serviceName;
+
+  Future close({bool immediate: false}) => impl.close(immediate: immediate);
+
+  Future responseOrError(Future f) => impl.responseOrError(f);
+
+  Future get errorFuture => impl.errorFuture;
+
+  int get version => impl.version;
+
+  Future<int> queryVersion() => impl.queryVersion();
+
+  void requireVersion(int requiredVersion) {
+    impl.requireVersion(requiredVersion);
+  }
+
+  String toString() {
+    return "{{interface|name}}Proxy($impl)";
+  }
+}
+
+
+class {{interface|name}}Stub extends bindings.Stub {
+  {{interface|name}} _impl = null;
+
+  {{interface|name}}Stub.fromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint, [this._impl])
+      : super.fromEndpoint(endpoint);
+
+  {{interface|name}}Stub.fromHandle(core.MojoHandle handle, [this._impl])
+      : super.fromHandle(handle);
+
+  {{interface|name}}Stub.unbound() : super.unbound();
+
+  static {{interface|name}}Stub newFromEndpoint(
+      core.MojoMessagePipeEndpoint endpoint) {
+    assert(endpoint.setDescription("For {{interface|name}}Stub"));
+    return new {{interface|name}}Stub.fromEndpoint(endpoint);
+  }
+
+{% for method in interface.methods %}
+{%- if method.response_parameters != None %}
+{%- set response_struct = method.response_param_struct %}
+  {{response_struct|name}} _{{response_struct|name}}Factory(
+    {%- for param in method.response_parameters -%}
+      {{param.kind|dart_type}} {{param|name}}{% if not loop.last %}, {% endif %}
+    {%- endfor -%}
+  ) {
+    var mojo_factory_result = new {{response_struct|name}}();
+    {%- for param in method.response_parameters %}
+    mojo_factory_result.{{param|name}} = {{param|name}};
+    {%- endfor %}
+    return mojo_factory_result;
+  }
+{%- endif %}
+{%- endfor %}
+
+  dynamic handleMessage(bindings.ServiceMessage message) {
+    if (bindings.ControlMessageHandler.isControlMessage(message)) {
+      return bindings.ControlMessageHandler.handleMessage(this,
+                                                          {{interface.version}},
+                                                          message);
+    }
+    assert(_impl != null);
+    switch (message.header.type) {
+{%- for method in interface.methods %}
+{%- set request_struct = method.param_struct %}
+      case _{{interface|name}}_{{method|name}}Name:
+        var params = {{request_struct|name}}.deserialize(
+            message.payload);
+{%- if method.response_parameters == None %}
+        _impl.{{method|name}}(
+          {%- for parameter in method.parameters -%}
+              params.{{parameter|name}}{% if not loop.last %}, {% endif %}
+          {%- endfor -%}
+        );
+{%- else %}
+{%- set response_struct = method.response_param_struct %}
+        var response = _impl.{{method|name}}(
+          {%- for parameter in method.parameters -%}
+              params.{{parameter|name}},
+          {%- endfor -%}
+          _{{response_struct|name}}Factory);
+        if (response is Future) {
+          return response.then((response) {
+            if (response != null) {
+              return buildResponseWithId(
+                  response,
+                  _{{interface|name}}_{{method|name}}Name,
+                  message.header.requestId,
+                  bindings.MessageHeader.kMessageIsResponse);
+            }
+          });
+        } else if (response != null) {
+          return buildResponseWithId(
+              response,
+              _{{interface|name}}_{{method|name}}Name,
+              message.header.requestId,
+              bindings.MessageHeader.kMessageIsResponse);
+        }
+{%- endif %}
+        break;
+{%- endfor %}
+      default:
+        throw new bindings.MojoCodecError("Unexpected message name");
+        break;
+    }
+    return null;
+  }
+
+  {{interface|name}} get impl => _impl;
+  set impl({{interface|name}} d) {
+    assert(_impl == null);
+    _impl = d;
+  }
+
+  String toString() {
+    var superString = super.toString();
+    return "{{interface|name}}Stub($superString)";
+  }
+
+  int get version => {{interface.version}};
+
+  {{descpkg}}ServiceDescription get serviceDescription =>
+    new _{{interface|name}}ServiceDescription();
+}
