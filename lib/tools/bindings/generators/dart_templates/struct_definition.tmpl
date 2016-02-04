@@ -79,7 +79,13 @@ class {{struct|name}} extends bindings.Struct {
 {%- endif %}
 {%- for byte in struct.bytes %}
 {%-   for packed_field in byte.packed_fields %}
-    {{encoding_macros.encode(packed_field.field|name, packed_field.field.kind, 8+packed_field.offset, packed_field.bit)|indent(4)}}
+    try {
+      {{encoding_macros.encode(packed_field.field|name, packed_field.field.kind, 8+packed_field.offset, packed_field.bit)|indent(6)}}
+    } on bindings.MojoCodecError catch(e) {
+      e.message = "Error encountered while encoding field "
+          "{{packed_field.field|name}} of struct {{struct|name}}: $e";
+      rethrow;
+    }
 {%-   endfor %}
 {%- endfor %}
   }

@@ -7,7 +7,7 @@
 {%-   elif sub_kind|is_enum_kind %}
 {%-     set sub_kind_size = "bindings.kEnumSize" %}
 {%-   endif %}
-{%-   if check_for_null %}
+{%-   if check_for_null -%}
 if ({{variable}} == null) {
   encoder{{level}}.encodeNullPointer({{offset}}, {{kind|is_nullable_kind|dart_true_false}});
 } else {
@@ -25,7 +25,7 @@ if ({{variable}} == null) {
     {{encode(variable~'[i'~level~']', sub_kind, 'bindings.ArrayDataHeader.kHeaderSize + ' ~ sub_kind_size ~ ' * i'~level, 0, level+1)|indent(4)}}
   }
 }
-{%- elif kind|is_map_kind %}
+{%- elif kind|is_map_kind -%}
 if ({{variable}} == null) {
   encoder{{level}}.encodeNullPointer({{offset}}, {{kind|is_nullable_kind|dart_true_false}});
 } else {
@@ -36,7 +36,7 @@ if ({{variable}} == null) {
   {{encode('keys'~level, kind.key_kind|array, 'bindings.ArrayDataHeader.kHeaderSize', 0, level+1, False)|indent(2)}}
   {{encode('values'~level, kind.value_kind|array, 'bindings.ArrayDataHeader.kHeaderSize + bindings.kPointerSize', 0, level+1, False)|indent(2)}}
 }
-{%- else %}
+{%- else -%}
 encoder{{level}}.{{kind|encode_method(variable, offset, bit)}};
 {%- endif %}
 {%- endmacro %}
