@@ -4,6 +4,7 @@ git remote add upstream https://github.com/domokit/mojo
 git fetch upstream
 git checkout -b upstream-master --track upstream/master
 git checkout upstream-master
+git pull
 git subtree split --prefix mojo/public/tools/bindings -b upstream-bindings
 git subtree split --prefix mojo/public/python -b upstream-python
 git checkout $current_branch
