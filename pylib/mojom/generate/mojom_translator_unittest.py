@@ -73,9 +73,9 @@ class TestTranslateFile(unittest.TestCase):
     mojom_interface = mojom_types_mojom.MojomInterface(
         methods={},
         decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AnInterface',
           source_file_info=mojom_types_mojom.SourceFileInfo(
-            file_name=file_name)),
-        interface_name='AnInterface')
+            file_name=file_name)))
     graph.resolved_types['interface_key'] = mojom_types_mojom.UserDefinedType(
         interface_type=mojom_interface)
 
@@ -145,7 +145,7 @@ class TestTranslateFile(unittest.TestCase):
     self.assertIn(imported_file_name, transitive_imports_paths)
     self.assertIn(second_level_imported_file_name, transitive_imports_paths)
 
-    self.assertEquals(mojom_interface.interface_name, mod.interfaces[0].name)
+    self.assertEquals('AnInterface', mod.interfaces[0].name)
     # Interfaces should be assigned their name as their spec.
     self.assertEquals('AnInterface', mod.interfaces[0].spec)
     self.assertEquals(mojom_struct.decl_data.short_name, mod.structs[0].name)
@@ -187,9 +187,9 @@ class TestUserDefinedFromTypeRef(unittest.TestCase):
     file_name = 'a.mojom'
     mojom_interface = mojom_types_mojom.MojomInterface(
         decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AnInterface',
           source_file_info=mojom_types_mojom.SourceFileInfo(
-            file_name=file_name)),
-        interface_name='AnInterface')
+            file_name=file_name)))
     mojom_interface.methods={}
 
     # Register the MojomInterface in a MojomFileGraph
@@ -506,12 +506,23 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
         translator._transitive_imports['root/c.mojom'], struct.imported_from)
 
   def test_interface(self):
+    self.do_interface_test(True)
+    self.do_interface_test(False)
+
+  def do_interface_test(self, specify_service_name):
     file_name = 'a.mojom'
     mojom_interface = mojom_types_mojom.MojomInterface(
         decl_data=mojom_types_mojom.DeclarationData(
+          short_name='AnInterface',
           source_file_info=mojom_types_mojom.SourceFileInfo(
-            file_name=file_name)),
-        interface_name='AnInterface')
+            file_name=file_name)))
+    if specify_service_name:
+      mojom_interface.service_name = 'test::TheInterface'
+      mojom_interface.decl_data.attributes = [mojom_types_mojom.Attribute(
+          key='ServiceName', value=mojom_types_mojom.LiteralValue(
+              string_value='test::TheInterface'))]
+    else:
+      mojom_interface.service_name = None
     mojom_method10 = mojom_types_mojom.MojomMethod(
         ordinal=10,
         decl_data=mojom_types_mojom.DeclarationData(
@@ -543,10 +554,15 @@ class TestUserDefinedTypeFromMojom(unittest.TestCase):
       interface_type=mojom_interface))
 
     self.assertEquals(translator._module, interface.module)
-    self.assertEquals(mojom_interface.interface_name, interface.name)
+    self.assertEquals('AnInterface', interface.name)
     self.assertEquals(0, interface.methods[0].ordinal)
     self.assertEquals(7, interface.methods[1].ordinal)
     self.assertEquals(10, interface.methods[2].ordinal)
+    if specify_service_name:
+      self.assertEquals('test::TheInterface', interface.service_name)
+    else:
+      self.assertEquals(None, interface.service_name)
+
     # TODO(azani): Add the contained declarations.
 
   def test_method(self):
