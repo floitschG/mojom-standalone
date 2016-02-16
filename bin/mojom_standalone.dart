@@ -2,26 +2,36 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'dart:async';
 import 'dart:io';
 import 'dart:isolate';
 
-final Uri mojomCompilerUri = Uri.parse("package:mojom_standalone/public/tools/"
-    "bindings/mojom_bindings_generator.py");
+import 'package:mojom/src/command_runner.dart';
+import 'package:mojom/src/utils.dart'
+    show CommandLineError, GenerationError, FetchError;
 
-// A simple script that invokes the mojom-compiler.
-//
-// By providing a Dart script, users can run the mojom-compiler through
-// `pub global active` and `pub run`.
-Future main(List<String> arguments) async {
-  // Make a copy.
-  arguments = arguments.toList();
-  Uri resolvedUri = await Isolate.resolvePackageUri(mojomCompilerUri);
-  arguments.insert(0, resolvedUri.toFilePath());
-  // print("python ${arguments.join(" ")}");
-  var process = await Process.start("python", arguments);
-  process.stdout.pipe(stdout);
-  process.stderr.pipe(stderr);
-  int exitCode = await process.exitCode;
-  exit(exitCode);
+const String minimalMojoSdkPackagePath = "package:mojom_standalone/public";
+
+main(List<String> arguments) async {
+  bool containsPathToMojoSdk = arguments.any((argument) {
+    return argument.startsWith("-m") || argument.startsWith("--mojo-sdk");
+  });
+
+  if (!containsPathToMojoSdk && arguments.isNotEmpty) {
+    Uri minimalSdkPathUri =
+        await Isolate.resolvePackageUri(Uri.parse(minimalMojoSdkPackagePath));
+    String minimalSdkPath = minimalSdkPathUri.toFilePath();
+    arguments = arguments.toList();
+    arguments.addAll(["-m", minimalSdkPath]);
+  }
+
+  var commandRunner = new MojomCommandRunner();
+  try {
+    return await commandRunner.run(arguments);
+  } on CommandLineError catch (e) {
+    stderr.writeln("$e\n${commandRunner.usage}");
+  } on GenerationError catch (e) {
+    stderr.writeln("$e\n${commandRunner.usage}");
+  } on FetchError catch (e) {
+    stderr.writeln("$e\n${commandRunner.usage}");
+  }
 }
