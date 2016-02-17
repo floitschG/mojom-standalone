@@ -15,19 +15,22 @@ const int _{{interface|name}}_{{method|name}}Name = {{method.ordinal}};
 class _{{interface|name}}ServiceDescription implements {{descpkg}}ServiceDescription {
 {%- if should_gen_mojom_types %}
   dynamic getTopLevelInterface([Function responseFactory]) =>
-      _{{interface|mojom_type_identifier|lower_camel}}();
+    responseFactory(_{{interface|mojom_type_identifier|lower_camel}}());
 
   dynamic getTypeDefinition(String typeKey, [Function responseFactory]) =>
-      getAllMojomTypeDefinitions()[typeKey];
+    responseFactory(getAllMojomTypeDefinitions()[typeKey]);
 
   dynamic getAllTypeDefinitions([Function responseFactory]) =>
-      getAllMojomTypeDefinitions();
+    responseFactory(getAllMojomTypeDefinitions());
 {%- else %}
-  dynamic getTopLevelInterface([Function responseFactory]) => null;
+  dynamic getTopLevelInterface([Function responseFactory]) =>
+      responseFactory(null);
 
-  dynamic getTypeDefinition(String typeKey, [Function responseFactory]) => null;
+  dynamic getTypeDefinition(String typeKey, [Function responseFactory]) =>
+      responseFactory(null);
 
-  dynamic getAllTypeDefinitions([Function responseFactory]) => null;
+  dynamic getAllTypeDefinitions([Function responseFactory]) =>
+      responseFactory(null);
 {%- endif %}
 }
 
@@ -325,6 +328,11 @@ class {{interface|name}}Stub extends bindings.Stub {
 
   int get version => {{interface.version}};
 
-  {{descpkg}}ServiceDescription get serviceDescription =>
-    new _{{interface|name}}ServiceDescription();
+  static {{descpkg}}ServiceDescription _cachedServiceDescription;
+  static {{descpkg}}ServiceDescription get serviceDescription {
+    if (_cachedServiceDescription == null) {
+      _cachedServiceDescription = new _{{interface|name}}ServiceDescription();
+    }
+    return _cachedServiceDescription;
+  }
 }

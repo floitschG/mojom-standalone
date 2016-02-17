@@ -17,6 +17,7 @@ class MojomFile(object):
       _descriptor.SingleFieldGroup('attributes', _descriptor.GenericArrayType(_descriptor.StructType(lambda: mojom_types_mojom.Attribute), nullable=True), 3, 0),
       _descriptor.SingleFieldGroup('imports', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 4, 0),
       _descriptor.SingleFieldGroup('declared_mojom_objects', _descriptor.StructType(lambda: KeysByType), 5, 0),
+      _descriptor.SingleFieldGroup('serialized_runtime_type_info', _descriptor.NativeArrayType('B', nullable=True), 6, 0),
     ],
   }
 
@@ -41,6 +42,24 @@ class KeysByType(object):
       _descriptor.SingleFieldGroup('embedded_enums', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 4, 0),
       _descriptor.SingleFieldGroup('top_level_constants', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 5, 0),
       _descriptor.SingleFieldGroup('embedded_constants', _descriptor.GenericArrayType(_descriptor.TYPE_STRING, nullable=True), 6, 0),
+    ],
+  }
+
+class ServiceTypeInfo(object):
+  __metaclass__ = _reflection.MojoStructType
+  DESCRIPTOR = {
+    'fields': [
+      _descriptor.SingleFieldGroup('top_level_interface', _descriptor.TYPE_STRING, 0, 0),
+      _descriptor.SingleFieldGroup('complete_type_set', _descriptor.GenericArrayType(_descriptor.TYPE_STRING), 1, 0),
+    ],
+  }
+
+class RuntimeTypeInfo(object):
+  __metaclass__ = _reflection.MojoStructType
+  DESCRIPTOR = {
+    'fields': [
+      _descriptor.SingleFieldGroup('services_by_name', _descriptor.MapType(_descriptor.TYPE_STRING, _descriptor.StructType(lambda: ServiceTypeInfo)), 0, 0),
+      _descriptor.SingleFieldGroup('type_map', _descriptor.MapType(_descriptor.TYPE_STRING, _descriptor.UnionType(lambda: mojom_types_mojom.UserDefinedType)), 1, 0),
     ],
   }
 

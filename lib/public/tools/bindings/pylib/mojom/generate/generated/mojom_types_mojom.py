@@ -179,7 +179,7 @@ class MojomInterface(object):
   DESCRIPTOR = {
     'fields': [
       _descriptor.SingleFieldGroup('decl_data', _descriptor.StructType(lambda: DeclarationData, nullable=True), 0, 0),
-      _descriptor.SingleFieldGroup('interface_name', _descriptor.TYPE_STRING, 1, 0),
+      _descriptor.SingleFieldGroup('service_name', _descriptor.TYPE_NULLABLE_STRING, 1, 0),
       _descriptor.SingleFieldGroup('methods', _descriptor.MapType(_descriptor.TYPE_UINT32, _descriptor.StructType(lambda: MojomMethod)), 2, 0),
     ],
   }

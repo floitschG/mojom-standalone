@@ -21,7 +21,7 @@
     ..declData = (new {{typepkg}}DeclarationData()
       ..shortName = '{{type|mojom_type_name|upper_camel}}'
       ..fullIdentifier = '{{type|fullidentifier}}')
-    ..interfaceName = '{{type|name}}'
+    ..serviceName_ = '{{type|name}}'
     ..methods = <int, {{typepkg}}MojomMethod>{
 {%- for method in type.methods %}
       _{{type|name}}_{{method|name}}Name: new {{typepkg}}MojomMethod()

@@ -181,7 +181,8 @@
 {%-     endif %}
 {%-   elif kind|is_any_handle_kind or kind|is_interface_kind %}
 {%-     if kind|is_interface_kind %}
-  mojo::internal::InterfacePointerToData({{input_field}}.Pass(), &{{output}}->{{name}});
+  mojo::internal::InterfaceHandleToData({{input_field}}.Pass(),
+                                        &{{output}}->{{name}});
 {%-     elif kind|is_interface_request_kind %}
   {{output}}->{{name}} = {{input_field}}.PassMessagePipe().release();
 {%-     else %}
@@ -253,7 +254,7 @@
     Deserialize_({{input}}->{{name}}.ptr, &{{output_field}});
 {%-       endif %}
 {%-     elif kind|is_interface_kind %}
-    mojo::internal::InterfaceDataToPointer(&{{input}}->{{name}}, &{{output_field}});
+    mojo::internal::InterfaceDataToHandle(&{{input}}->{{name}}, &{{output_field}});
 {%-     elif kind|is_interface_request_kind %}
     {{output_field}}.Bind(mojo::MakeScopedHandle(mojo::internal::FetchAndReset(&{{input}}->{{name}})));
 {%-     elif kind|is_any_handle_kind %}

@@ -43,7 +43,6 @@ namespace {{namespace}} {
 {%  for interface in interfaces %}
 class {{interface.name}};
 using {{interface.name}}Ptr = mojo::InterfacePtr<{{interface.name}}>;
-using {{interface.name}}Handle = mojo::InterfaceHandle<{{interface.name}}>;
 {%  endfor %}
 
 {#--- Struct Forward Declarations -#}

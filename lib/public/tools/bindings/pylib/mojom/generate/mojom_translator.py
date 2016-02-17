@@ -393,12 +393,16 @@ class FileTranslator(object):
         == mojom_types_mojom.UserDefinedType.Tags.interface_type)
     mojom_interface = mojom_type.interface_type
     interface.attributes = self.AttributesFromMojom(mojom_interface)
-    interface.service_name = None
-    if interface.attributes:
-      interface.service_name = interface.attributes.get('ServiceName')
     self.PopulateModuleOrImportedFrom(interface, mojom_interface)
-    interface.name = mojom_interface.interface_name
+    interface.name = mojom_interface.decl_data.short_name
     interface.spec = interface.name
+    interface.service_name = mojom_interface.service_name
+    if interface.attributes:
+      assert interface.service_name == interface.attributes.get(
+          'ServiceName', None), interface.service_name
+    else:
+      assert interface.service_name is None, interface.service_name
+
 
     # Translate the dictionary of methods into a list of module.Methods.
     # In order to have a deterministic ordering we sort by method ordinal.

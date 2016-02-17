@@ -91,7 +91,7 @@ mojo::internal::ValidationError SerializeUnion_(
         mojo::internal::Interface_Data* {{field.name}} =
             reinterpret_cast<mojo::internal::Interface_Data*>(
                 &result->data.f_{{field.name}});
-        mojo::internal::InterfacePointerToData(
+        mojo::internal::InterfaceHandleToData(
             input_acc.data()->{{field.name}}->Pass(), {{field.name}});
 {%    elif field.kind|is_enum_kind %}
         result->data.f_{{field.name}} = 
@@ -144,7 +144,7 @@ void Deserialize_(internal::{{union.name}}_Data* input,
         mojo::internal::Interface_Data* {{field.name}}_in =
             reinterpret_cast<mojo::internal::Interface_Data*>(
                 &input->data.f_{{field.name}});
-        mojo::internal::InterfaceDataToPointer(
+        mojo::internal::InterfaceDataToHandle(
             {{field.name}}_in, &{{field.name}}_out);
         output->set_{{field.name}}({{field.name}}_out.Pass());
 {%    elif field.kind|is_enum_kind %}
